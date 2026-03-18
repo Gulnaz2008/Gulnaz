@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>BaaS</title>
+    <title>BaaS - Облачная регистрация</title>
 
     <style>
         body {
@@ -31,7 +31,7 @@
             border-radius: 6px;
         }
 
-        button {
+        button#mainBtn {
             background: #007bff;
             color: white;
             border: none;
@@ -40,9 +40,10 @@
             width: 100%;
             font-weight: 600;
             cursor: pointer;
+            transition: 0.3s;
         }
 
-        button:hover {
+        button#mainBtn:hover {
             background: #0056b3;
         }
 
@@ -58,6 +59,7 @@
             border-radius: 8px;
             width: 100%;
             max-width: 500px;
+            position: relative;
         }
 
         .like-btn {
@@ -66,6 +68,11 @@
             background: #f8f9fa;
             padding: 5px 12px;
             border-radius: 20px;
+            transition: 0.2s;
+        }
+
+        .like-btn:hover {
+            background: #e9ecef;
         }
 
         .time {
@@ -90,6 +97,7 @@
 <div id="feed" style="width: 100%; max-width: 500px;"></div>
 
 <script type="module">
+    // Импорт необходимых функций Firebase
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
     import {
         getFirestore,
@@ -104,6 +112,7 @@
         increment
     } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
+    // Твои новые данные проекта (gulnaz-a1c58)
     const firebaseConfig = {
         apiKey: "AIzaSyAWQP2kf_fpAidqN68FIRxYCYVaHhdabgI",
         authDomain: "gulnaz-a1c58.firebaseapp.com",
@@ -114,10 +123,14 @@
         measurementId: "G-C548RP728S"
     };
 
+    // Инициализация
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // 👍 ЛАЙК
+    // ВАЖНО: Делаем базу видимой для консоли браузера (для теста на взлом)
+    window.db = db;
+
+    // 👍 ЛАЙК (Атомарное обновление)
     window.processLike = async (id) => {
         try {
             const docRef = doc(db, "requests", id);
@@ -125,46 +138,43 @@
                 likes: increment(1)
             });
         } catch (e) {
-            console.error("Ошибка лайка:", e.message);
+            console.error("Ошибка безопасности (лайк запрещен):", e.message);
         }
     };
 
-    // 📤 ОТПРАВКА
+    // 📤 ОТПРАВКА ДАННЫХ
     document.getElementById('mainBtn').onclick = async () => {
         const btn = document.getElementById('mainBtn');
-        btn.disabled = true;
+        const nameVal = document.getElementById('name').value.trim();
+        const emailVal = document.getElementById('email').value.trim();
 
-        const name = document.getElementById('name').value.trim();
-        const email = document.getElementById('email').value.trim();
-
-        // ✅ ВАЛИДАЦИЯ
-        if (!name || !email) {
+        if (!nameVal || !emailVal) {
             alert("Заполните все поля!");
-            btn.disabled = false;
             return;
         }
 
+        btn.disabled = true;
+
         try {
             await addDoc(collection(db, "requests"), {
-                name: name,
-                email: email,
+                name: nameVal,
+                email: emailVal,
                 likes: 0,
                 timestamp: serverTimestamp()
             });
 
-            // очистка полей
             document.getElementById('name').value = "";
             document.getElementById('email').value = "";
 
         } catch (e) {
-            alert("Ошибка безопасности или подключения!");
+            alert("Ошибка безопасности: Данные отклонены сервером!");
             console.error(e);
         }
 
         btn.disabled = false;
     };
 
-    // 🔄 REALTIME ЛЕНТА
+    // 🔄 REALTIME ЛЕНТА С СОРТИРОВКОЙ
     const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
 
     onSnapshot(q, (snapshot) => {
@@ -173,7 +183,6 @@
 
         snapshot.forEach((docItem) => {
             const data = docItem.data();
-
             const time = data.timestamp
                 ? data.timestamp.toDate().toLocaleTimeString()
                 : "...";
@@ -182,7 +191,7 @@
                 <div class="post">
                     <span class="time">${time}</span>
                     <b>${data.name}</b>
-                    <p>${data.email}</p>
+                    <p style="margin: 5px 0; color: #555;">${data.email}</p>
                     <button class="like-btn" onclick="processLike('${docItem.id}')">
                         👍 ${data.likes || 0}
                     </button>
