@@ -6,7 +6,7 @@
 
     <style>
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: Arial, sans-serif;
             background: #f4f7f6;
             display: flex;
             flex-direction: column;
@@ -40,7 +40,6 @@
             width: 100%;
             font-weight: 600;
             cursor: pointer;
-            transition: 0.3s;
         }
 
         button#mainBtn:hover {
@@ -68,7 +67,6 @@
             background: #f8f9fa;
             padding: 5px 12px;
             border-radius: 20px;
-            transition: 0.2s;
         }
 
         .like-btn:hover {
@@ -97,7 +95,6 @@
 <div id="feed" style="width: 100%; max-width: 500px;"></div>
 
 <script type="module">
-    // Импорт необходимых функций Firebase
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
     import {
         getFirestore,
@@ -112,25 +109,19 @@
         increment
     } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
-    // Твои новые данные проекта (gulnaz-a1c58)
     const firebaseConfig = {
         apiKey: "AIzaSyAWQP2kf_fpAidqN68FIRxYCYVaHhdabgI",
         authDomain: "gulnaz-a1c58.firebaseapp.com",
         projectId: "gulnaz-a1c58",
-        storageBucket: "gulnaz-a1c58.firebasestorage.app",
+        storageBucket: "gulnaz-a1c58.appspot.com", // ИСПРАВЛЕНО
         messagingSenderId: "55261769559",
-        appId: "1:55261769559:web:f8b87fe5e36dd449f49812",
-        measurementId: "G-C548RP728S"
+        appId: "1:55261769559:web:f8b87fe5e36dd449f49812"
     };
 
-    // Инициализация
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // ВАЖНО: Делаем базу видимой для консоли браузера (для теста на взлом)
-    window.db = db;
-
-    // 👍 ЛАЙК (Атомарное обновление)
+    // ЛАЙК
     window.processLike = async (id) => {
         try {
             const docRef = doc(db, "requests", id);
@@ -138,11 +129,11 @@
                 likes: increment(1)
             });
         } catch (e) {
-            console.error("Ошибка безопасности (лайк запрещен):", e.message);
+            console.error("Ошибка лайка:", e);
         }
     };
 
-    // 📤 ОТПРАВКА ДАННЫХ
+    // ОТПРАВКА
     document.getElementById('mainBtn').onclick = async () => {
         const btn = document.getElementById('mainBtn');
         const nameVal = document.getElementById('name').value.trim();
@@ -167,14 +158,14 @@
             document.getElementById('email').value = "";
 
         } catch (e) {
-            alert("Ошибка безопасности: Данные отклонены сервером!");
             console.error(e);
+            alert("Ошибка: проверь правила Firestore!");
         }
 
         btn.disabled = false;
     };
 
-    // 🔄 REALTIME ЛЕНТА С СОРТИРОВКОЙ
+    // ЛЕНТА
     const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
 
     onSnapshot(q, (snapshot) => {
@@ -187,16 +178,21 @@
                 ? data.timestamp.toDate().toLocaleTimeString()
                 : "...";
 
-            feed.innerHTML += `
-                <div class="post">
-                    <span class="time">${time}</span>
-                    <b>${data.name}</b>
-                    <p style="margin: 5px 0; color: #555;">${data.email}</p>
-                    <button class="like-btn" onclick="processLike('${docItem.id}')">
-                        👍 ${data.likes || 0}
-                    </button>
-                </div>
+            const post = document.createElement("div");
+            post.className = "post";
+
+            post.innerHTML = `
+                <span class="time">${time}</span>
+                <b>${data.name}</b>
+                <p style="margin: 5px 0; color: #555;">${data.email}</p>
+                <button class="like-btn">
+                    👍 ${data.likes || 0}
+                </button>
             `;
+
+            post.querySelector("button").onclick = () => processLike(docItem.id);
+
+            feed.appendChild(post);
         });
     });
 </script>
