@@ -195,6 +195,27 @@
             feed.appendChild(post);
         });
     });
+    
+    import { doc, updateDoc, arrayUnion } from "firebase/firestore";
+
+// 💬 Добавить комментарий к посту
+export async function addComment(postId, userName, text) {
+  try {
+    const postRef = doc(db, "posts", postId);
+
+    await updateDoc(postRef, {
+      comments: arrayUnion({
+        user: userName,
+        text: text,
+        createdAt: new Date()
+      })
+    });
+
+    console.log("Комментарий добавлен!");
+  } catch (error) {
+    console.error("Ошибка добавления комментария:", error);
+  }
+}
 </script>
 
 </body>
