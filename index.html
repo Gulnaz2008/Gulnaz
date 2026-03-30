@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Purple Social Firebase</title>
+<title>Purple Firebase Feed</title>
 
 <style>
 body {
@@ -37,23 +37,18 @@ input {
     border: 1px solid #ddd;
 }
 
-button {
-    cursor: pointer;
-    border: none;
-    border-radius: 8px;
-    padding: 10px;
-}
-
 #mainBtn {
     width: 100%;
     background: linear-gradient(135deg, #6a11cb, #2575fc);
     color: white;
     font-weight: bold;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
 }
 
 .post {
     width: 100%;
-    max-width: 500px;
     background: white;
     margin-top: 15px;
     padding: 15px;
@@ -61,11 +56,33 @@ button {
     box-shadow: 0 5px 15px rgba(0,0,0,0.15);
 }
 
+/* 💜 аватар */
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6a11cb, #2575fc);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+/* header поста */
+.postHeader {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
 .like-btn {
     background: #f3e8ff;
     color: #6a11cb;
     padding: 6px 12px;
     border-radius: 20px;
+    border: none;
     margin-top: 5px;
 }
 
@@ -81,24 +98,17 @@ button {
     color: white;
     margin-top: 5px;
     width: 100%;
+    border: none;
+    padding: 8px;
+    border-radius: 8px;
 }
 
 .comments p {
     background: #f3e8ff;
-    padding: 5px 8px;
-    border-radius: 8px;
+    padding: 6px 10px;
+    border-radius: 10px;
     margin: 5px 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.deleteComment {
-    background: red;
-    color: white;
-    border-radius: 5px;
-    padding: 2px 6px;
-    font-size: 10px;
+    font-size: 13px;
 }
 </style>
 </head>
@@ -106,7 +116,7 @@ button {
 <body>
 
 <div class="container">
-    <h3>💜 Панель управленями данными </h3>
+    <h3>💜 Purple Firebase Feed</h3>
 
     <input id="name" placeholder="Имя">
     <input id="email" placeholder="Email">
@@ -129,8 +139,7 @@ serverTimestamp,
 updateDoc,
 doc,
 increment,
-arrayUnion,
-arrayRemove
+arrayUnion
 } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -156,24 +165,17 @@ window.addComment = async (id, text) => {
 const ref = doc(db, "requests", id);
 await updateDoc(ref, {
 comments: arrayUnion({
-id: Date.now(),
 text: text
 })
 });
 };
 
-// ❌ УДАЛЕНИЕ КОММЕНТАРИЯ (НОВАЯ ФУНКЦИЯ)
-window.deleteComment = async (postId, comment) => {
-const ref = doc(db, "requests", postId);
-await updateDoc(ref, {
-comments: arrayRemove(comment)
-});
-};
-
-// ➕ POST
+// ➕ пост
 document.getElementById("mainBtn").onclick = async () => {
-const name = document.getElementById("name").value;
-const email = document.getElementById("email").value;
+const name = document.getElementById("name").value.trim();
+const email = document.getElementById("email").value.trim();
+
+if (!name || !email) return;
 
 await addDoc(collection(db, "requests"), {
 name,
@@ -187,7 +189,7 @@ document.getElementById("name").value = "";
 document.getElementById("email").value = "";
 };
 
-// 📡 FEED
+// 📡 лента
 const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
 
 onSnapshot(q, (snap) => {
@@ -197,12 +199,19 @@ feed.innerHTML = "";
 snap.forEach((d) => {
 const data = d.data();
 
+const avatarLetter = data.name ? data.name[0].toUpperCase() : "?";
+
 const post = document.createElement("div");
 post.className = "post";
 
 post.innerHTML = `
-<b>${data.name}</b>
-<p>${data.email}</p>
+<div class="postHeader">
+    <div class="avatar">${avatarLetter}</div>
+    <div>
+        <b>${data.name}</b><br>
+        <small>${data.email}</small>
+    </div>
+</div>
 
 <button class="like-btn">💜 ${data.likes}</button>
 
@@ -211,10 +220,7 @@ post.innerHTML = `
 
 <div class="comments">
 ${(data.comments || []).map(c => `
-<p>
-💬 ${c.text}
-<button class="deleteCommentBtn">x</button>
-</p>
+<p>💬 ${c.text}</p>
 `).join("")}
 </div>
 `;
@@ -223,18 +229,11 @@ post.querySelector(".like-btn").onclick = () => likePost(d.id);
 
 post.querySelector(".sendBtn").onclick = () => {
 const input = post.querySelector(".commentInput");
-if (!input.value) return;
-addComment(d.id, input.value);
+if (!input.value.trim()) return;
+
+addComment(d.id, input.value.trim());
 input.value = "";
 };
-
-// ❌ удалить комментарий
-post.querySelectorAll(".deleteCommentBtn").forEach((btn, i) => {
-btn.onclick = async () => {
-const comment = data.comments[i];
-await deleteComment(d.id, comment);
-};
-});
 
 feed.appendChild(post);
 });
