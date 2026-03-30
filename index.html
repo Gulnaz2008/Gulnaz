@@ -46,10 +46,6 @@
             background: #0056b3;
         }
 
-        button:disabled {
-            background: #ccc;
-        }
-
         .post {
             background: #fff;
             border: 1px solid #eaeaea;
@@ -57,8 +53,6 @@
             margin-top: 15px;
             border-radius: 8px;
             width: 100%;
-            max-width: 500px;
-            position: relative;
         }
 
         .like-btn {
@@ -67,6 +61,7 @@
             background: #f8f9fa;
             padding: 5px 12px;
             border-radius: 20px;
+            margin-top: 5px;
         }
 
         .like-btn:hover {
@@ -78,6 +73,20 @@
             color: #999;
             float: right;
         }
+
+        .comments {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #333;
+        }
+
+        .commentInput {
+            width: 100%;
+            padding: 6px;
+            margin-top: 8px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
     </style>
 </head>
 
@@ -87,135 +96,142 @@
     <h3>Панель управления данными</h3>
 
     <input type="text" id="name" placeholder="Имя профиля">
-    <input type="email" id="email" placeholder="Рабочий Email">
+    <input type="email" id="email" placeholder="Email">
 
-    <button id="mainBtn">Опубликовать в облако</button>
+    <button id="mainBtn">Опубликовать</button>
 </div>
 
 <div id="feed" style="width: 100%; max-width: 500px;"></div>
 
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-    import {
-        getFirestore,
-        collection,
-        addDoc,
-        query,
-        orderBy,
-        onSnapshot,
-        serverTimestamp,
-        updateDoc,
-        doc,
-        increment
-    } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+import {
+    getFirestore,
+    collection,
+    addDoc,
+    query,
+    orderBy,
+    onSnapshot,
+    serverTimestamp,
+    updateDoc,
+    doc,
+    increment,
+    arrayUnion
+} from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyAWQP2kf_fpAidqN68FIRxYCYVaHhdabgI",
-        authDomain: "gulnaz-a1c58.firebaseapp.com",
-        projectId: "gulnaz-a1c58",
-        storageBucket: "gulnaz-a1c58.appspot.com", // ИСПРАВЛЕНО
-        messagingSenderId: "55261769559",
-        appId: "1:55261769559:web:f8b87fe5e36dd449f49812"
-    };
+const firebaseConfig = {
+    apiKey: "AIzaSyAWQP2kf_fpAidqN68FIRxYCYVaHhdabgI",
+    authDomain: "gulnaz-a1c58.firebaseapp.com",
+    projectId: "gulnaz-a1c58",
+    storageBucket: "gulnaz-a1c58.appspot.com",
+    messagingSenderId: "55261769559",
+    appId: "1:55261769559:web:f8b87fe5e36dd449f49812"
+};
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-    // ЛАЙК
-    window.processLike = async (id) => {
-        try {
-            const docRef = doc(db, "requests", id);
-            await updateDoc(docRef, {
-                likes: increment(1)
-            });
-        } catch (e) {
-            console.error("Ошибка лайка:", e);
-        }
-    };
-
-    // ОТПРАВКА
-    document.getElementById('mainBtn').onclick = async () => {
-        const btn = document.getElementById('mainBtn');
-        const nameVal = document.getElementById('name').value.trim();
-        const emailVal = document.getElementById('email').value.trim();
-
-        if (!nameVal || !emailVal) {
-            alert("Заполните все поля!");
-            return;
-        }
-
-        btn.disabled = true;
-
-        try {
-            await addDoc(collection(db, "requests"), {
-                name: nameVal,
-                email: emailVal,
-                likes: 0,
-                timestamp: serverTimestamp()
-            });
-
-            document.getElementById('name').value = "";
-            document.getElementById('email').value = "";
-
-        } catch (e) {
-            console.error(e);
-            alert("Ошибка: проверь правила Firestore!");
-        }
-
-        btn.disabled = false;
-    };
-
-    // ЛЕНТА
-    const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
-
-    onSnapshot(q, (snapshot) => {
-        const feed = document.getElementById('feed');
-        feed.innerHTML = "";
-
-        snapshot.forEach((docItem) => {
-            const data = docItem.data();
-            const time = data.timestamp
-                ? data.timestamp.toDate().toLocaleTimeString()
-                : "...";
-
-            const post = document.createElement("div");
-            post.className = "post";
-
-            post.innerHTML = `
-                <span class="time">${time}</span>
-                <b>${data.name}</b>
-                <p style="margin: 5px 0; color: #555;">${data.email}</p>
-                <button class="like-btn">
-                    👍 ${data.likes || 0}
-                </button>
-            `;
-
-            post.querySelector("button").onclick = () => processLike(docItem.id);
-
-            feed.appendChild(post);
+// 👍 ЛАЙК
+window.processLike = async (id) => {
+    try {
+        const ref = doc(db, "requests", id);
+        await updateDoc(ref, {
+            likes: increment(1)
         });
+    } catch (e) {
+        console.error(e);
+    }
+};
+
+// 💬 КОММЕНТАРИЙ
+window.addComment = async (id, text) => {
+    try {
+        const ref = doc(db, "requests", id);
+
+        await updateDoc(ref, {
+            comments: arrayUnion({
+                text: text,
+                createdAt: new Date()
+            })
+        });
+    } catch (e) {
+        console.error(e);
+    }
+};
+
+// 📤 ОТПРАВКА ПОСТА
+document.getElementById("mainBtn").onclick = async () => {
+    const name = document.getElementById("name").value.trim();
+    const email = document.getElementById("email").value.trim();
+
+    if (!name || !email) {
+        alert("Заполните поля!");
+        return;
+    }
+
+    await addDoc(collection(db, "requests"), {
+        name,
+        email,
+        likes: 0,
+        comments: [],
+        timestamp: serverTimestamp()
     });
-    
-    import { doc, updateDoc, arrayUnion } from "firebase/firestore";
 
-// 💬 Добавить комментарий к посту
-export async function addComment(postId, userName, text) {
-  try {
-    const postRef = doc(db, "posts", postId);
+    document.getElementById("name").value = "";
+    document.getElementById("email").value = "";
+};
 
-    await updateDoc(postRef, {
-      comments: arrayUnion({
-        user: userName,
-        text: text,
-        createdAt: new Date()
-      })
+// 📡 ЛЕНТА
+const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
+
+onSnapshot(q, (snapshot) => {
+    const feed = document.getElementById("feed");
+    feed.innerHTML = "";
+
+    snapshot.forEach((docItem) => {
+        const data = docItem.data();
+
+        const time = data.timestamp
+            ? data.timestamp.toDate().toLocaleTimeString()
+            : "...";
+
+        const post = document.createElement("div");
+        post.className = "post";
+
+        post.innerHTML = `
+            <span class="time">${time}</span>
+            <b>${data.name}</b>
+            <p>${data.email}</p>
+
+            <button class="like-btn">
+                👍 ${data.likes || 0}
+            </button>
+
+            <input class="commentInput" placeholder="Комментарий...">
+            <button class="like-btn sendBtn">Отправить</button>
+
+            <div class="comments">
+                ${(data.comments || []).map(c =>
+                    `<p>💬 ${c.text}</p>`
+                ).join("")}
+            </div>
+        `;
+
+        // 👍 лайк
+        post.querySelector(".like-btn").onclick = () =>
+            processLike(docItem.id);
+
+        // 💬 комментарий
+        const input = post.querySelector(".commentInput");
+        post.querySelector(".sendBtn").onclick = () => {
+            if (!input.value.trim()) return;
+            addComment(docItem.id, input.value.trim());
+            input.value = "";
+        };
+
+        feed.appendChild(post);
     });
-
-    console.log("Комментарий добавлен!");
-  } catch (error) {
-    console.error("Ошибка добавления комментария:", error);
-  }
-}
+});
 </script>
 
 </body>
