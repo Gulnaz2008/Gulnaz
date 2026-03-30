@@ -1,236 +1,243 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <title>BaaS - Облачная регистрация</title>
+<meta charset="UTF-8">
+<title>Purple Social Firebase</title>
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f7f6;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-        }
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #6a11cb, #2575fc);
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
 
-        .container {
-            width: 100%;
-            max-width: 500px;
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        }
+.container {
+    width: 100%;
+    max-width: 500px;
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
 
-        input {
-            width: 100%;
-            padding: 12px;
-            margin: 8px 0;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-        }
+h3 {
+    text-align: center;
+    color: #6a11cb;
+}
 
-        button#mainBtn {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 6px;
-            width: 100%;
-            font-weight: 600;
-            cursor: pointer;
-        }
+input {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
 
-        button#mainBtn:hover {
-            background: #0056b3;
-        }
+button {
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    padding: 10px;
+}
 
-        .post {
-            background: #fff;
-            border: 1px solid #eaeaea;
-            padding: 15px;
-            margin-top: 15px;
-            border-radius: 8px;
-            width: 100%;
-        }
+#mainBtn {
+    width: 100%;
+    background: linear-gradient(135deg, #6a11cb, #2575fc);
+    color: white;
+    font-weight: bold;
+}
 
-        .like-btn {
-            cursor: pointer;
-            border: none;
-            background: #f8f9fa;
-            padding: 5px 12px;
-            border-radius: 20px;
-            margin-top: 5px;
-        }
+.post {
+    width: 100%;
+    max-width: 500px;
+    background: white;
+    margin-top: 15px;
+    padding: 15px;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+}
 
-        .like-btn:hover {
-            background: #e9ecef;
-        }
+.like-btn {
+    background: #f3e8ff;
+    color: #6a11cb;
+    padding: 6px 12px;
+    border-radius: 20px;
+    margin-top: 5px;
+}
 
-        .time {
-            font-size: 11px;
-            color: #999;
-            float: right;
-        }
+.commentInput {
+    width: 100%;
+    padding: 8px;
+    margin-top: 8px;
+    border-radius: 8px;
+}
 
-        .comments {
-            margin-top: 10px;
-            font-size: 12px;
-            color: #333;
-        }
+.sendBtn {
+    background: #6a11cb;
+    color: white;
+    margin-top: 5px;
+    width: 100%;
+}
 
-        .commentInput {
-            width: 100%;
-            padding: 6px;
-            margin-top: 8px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-        }
-    </style>
+.comments p {
+    background: #f3e8ff;
+    padding: 5px 8px;
+    border-radius: 8px;
+    margin: 5px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.deleteComment {
+    background: red;
+    color: white;
+    border-radius: 5px;
+    padding: 2px 6px;
+    font-size: 10px;
+}
+</style>
 </head>
 
 <body>
 
 <div class="container">
-    <h3>Панель управления данными</h3>
+    <h3>💜 Purple Firebase Feed</h3>
 
-    <input type="text" id="name" placeholder="Имя профиля">
-    <input type="email" id="email" placeholder="Email">
+    <input id="name" placeholder="Имя">
+    <input id="email" placeholder="Email">
 
     <button id="mainBtn">Опубликовать</button>
 </div>
 
-<div id="feed" style="width: 100%; max-width: 500px;"></div>
+<div id="feed"></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
 import {
-    getFirestore,
-    collection,
-    addDoc,
-    query,
-    orderBy,
-    onSnapshot,
-    serverTimestamp,
-    updateDoc,
-    doc,
-    increment,
-    arrayUnion
+getFirestore,
+collection,
+addDoc,
+query,
+orderBy,
+onSnapshot,
+serverTimestamp,
+updateDoc,
+doc,
+increment,
+arrayUnion,
+arrayRemove
 } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyAWQP2kf_fpAidqN68FIRxYCYVaHhdabgI",
-    authDomain: "gulnaz-a1c58.firebaseapp.com",
-    projectId: "gulnaz-a1c58",
-    storageBucket: "gulnaz-a1c58.appspot.com",
-    messagingSenderId: "55261769559",
-    appId: "1:55261769559:web:f8b87fe5e36dd449f49812"
+apiKey: "YOUR_KEY",
+authDomain: "YOUR_DOMAIN",
+projectId: "YOUR_ID",
+storageBucket: "YOUR_BUCKET",
+messagingSenderId: "YOUR_SENDER",
+appId: "YOUR_APP"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 👍 ЛАЙК
-window.processLike = async (id) => {
-    try {
-        const ref = doc(db, "requests", id);
-        await updateDoc(ref, {
-            likes: increment(1)
-        });
-    } catch (e) {
-        console.error(e);
-    }
+// 👍 лайк
+window.likePost = async (id) => {
+const ref = doc(db, "requests", id);
+await updateDoc(ref, { likes: increment(1) });
 };
 
-// 💬 КОММЕНТАРИЙ
+// 💬 комментарий
 window.addComment = async (id, text) => {
-    try {
-        const ref = doc(db, "requests", id);
-
-        await updateDoc(ref, {
-            comments: arrayUnion({
-                text: text,
-                createdAt: new Date()
-            })
-        });
-    } catch (e) {
-        console.error(e);
-    }
+const ref = doc(db, "requests", id);
+await updateDoc(ref, {
+comments: arrayUnion({
+id: Date.now(),
+text: text
+})
+});
 };
 
-// 📤 ОТПРАВКА ПОСТА
+// ❌ УДАЛЕНИЕ КОММЕНТАРИЯ (НОВАЯ ФУНКЦИЯ)
+window.deleteComment = async (postId, comment) => {
+const ref = doc(db, "requests", postId);
+await updateDoc(ref, {
+comments: arrayRemove(comment)
+});
+};
+
+// ➕ POST
 document.getElementById("mainBtn").onclick = async () => {
-    const name = document.getElementById("name").value.trim();
-    const email = document.getElementById("email").value.trim();
+const name = document.getElementById("name").value;
+const email = document.getElementById("email").value;
 
-    if (!name || !email) {
-        alert("Заполните поля!");
-        return;
-    }
+await addDoc(collection(db, "requests"), {
+name,
+email,
+likes: 0,
+comments: [],
+timestamp: serverTimestamp()
+});
 
-    await addDoc(collection(db, "requests"), {
-        name,
-        email,
-        likes: 0,
-        comments: [],
-        timestamp: serverTimestamp()
-    });
-
-    document.getElementById("name").value = "";
-    document.getElementById("email").value = "";
+document.getElementById("name").value = "";
+document.getElementById("email").value = "";
 };
 
-// 📡 ЛЕНТА
+// 📡 FEED
 const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
 
-onSnapshot(q, (snapshot) => {
-    const feed = document.getElementById("feed");
-    feed.innerHTML = "";
+onSnapshot(q, (snap) => {
+const feed = document.getElementById("feed");
+feed.innerHTML = "";
 
-    snapshot.forEach((docItem) => {
-        const data = docItem.data();
+snap.forEach((d) => {
+const data = d.data();
 
-        const time = data.timestamp
-            ? data.timestamp.toDate().toLocaleTimeString()
-            : "...";
+const post = document.createElement("div");
+post.className = "post";
 
-        const post = document.createElement("div");
-        post.className = "post";
+post.innerHTML = `
+<b>${data.name}</b>
+<p>${data.email}</p>
 
-        post.innerHTML = `
-            <span class="time">${time}</span>
-            <b>${data.name}</b>
-            <p>${data.email}</p>
+<button class="like-btn">💜 ${data.likes}</button>
 
-            <button class="like-btn">
-                👍 ${data.likes || 0}
-            </button>
+<input class="commentInput" placeholder="Комментарий...">
+<button class="sendBtn">Отправить</button>
 
-            <input class="commentInput" placeholder="Комментарий...">
-            <button class="like-btn sendBtn">Отправить</button>
+<div class="comments">
+${(data.comments || []).map(c => `
+<p>
+💬 ${c.text}
+<button class="deleteCommentBtn">x</button>
+</p>
+`).join("")}
+</div>
+`;
 
-            <div class="comments">
-                ${(data.comments || []).map(c =>
-                    `<p>💬 ${c.text}</p>`
-                ).join("")}
-            </div>
-        `;
+post.querySelector(".like-btn").onclick = () => likePost(d.id);
 
-        // 👍 лайк
-        post.querySelector(".like-btn").onclick = () =>
-            processLike(docItem.id);
+post.querySelector(".sendBtn").onclick = () => {
+const input = post.querySelector(".commentInput");
+if (!input.value) return;
+addComment(d.id, input.value);
+input.value = "";
+};
 
-        // 💬 комментарий
-        const input = post.querySelector(".commentInput");
-        post.querySelector(".sendBtn").onclick = () => {
-            if (!input.value.trim()) return;
-            addComment(docItem.id, input.value.trim());
-            input.value = "";
-        };
+// ❌ удалить комментарий
+post.querySelectorAll(".deleteCommentBtn").forEach((btn, i) => {
+btn.onclick = async () => {
+const comment = data.comments[i];
+await deleteComment(d.id, comment);
+};
+});
 
-        feed.appendChild(post);
-    });
+feed.appendChild(post);
+});
 });
 </script>
 
