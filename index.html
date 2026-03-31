@@ -4,73 +4,158 @@
     <meta charset="UTF-8">
     <title>BaaS - Облачная регистрация</title>
     <style>
+        /* Общие настройки фона и шрифтов */
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f4f7f6;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             padding: 20px;
+            margin: 0;
+            color: #4a148c;
         }
+
+        /* Контейнеры */
         .container {
             width: 100%;
             max-width: 500px;
-            background: white;
+            background: rgba(255, 255, 255, 0.9);
             padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(155, 89, 182, 0.15);
             margin-bottom: 20px;
+            box-sizing: border-box;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
+
+        /* Зал славы */
         .leaders-panel {
             background: #fff;
-            border: 2px solid #ffd700;
-            padding: 15px;
-            border-radius: 12px;
+            border: 2px solid #ce93d8;
             text-align: center;
+        }
+        .leaders-panel h4 {
+            color: #7b1fa2;
+            margin: 0 0 15px 0;
+            font-size: 1.2rem;
         }
         .leader-item {
             display: inline-block;
-            margin: 0 10px;
+            margin: 0 12px;
             font-size: 14px;
+            padding: 10px;
+            background: #fdf5ff;
+            border-radius: 12px;
+            border: 1px solid #f3e5f5;
         }
-        .leader-rank { color: #ffd700; font-weight: bold; font-size: 18px; }
+        .leader-rank { 
+            color: #ab47bc; 
+            font-weight: bold; 
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+
+        /* Поля ввода */
         input {
             width: 100%;
-            padding: 12px;
-            margin: 8px 0;
-            border: 1px solid #ddd;
-            border-radius: 6px;
+            padding: 14px;
+            margin: 10px 0;
+            border: 2px solid #f3e5f5;
+            border-radius: 12px;
             box-sizing: border-box;
+            outline: none;
+            transition: all 0.3s ease;
+            font-size: 15px;
         }
+        input:focus {
+            border-color: #ce93d8;
+            box-shadow: 0 0 8px rgba(206, 147, 216, 0.4);
+        }
+
+        /* Кнопка опубликовать */
         button#mainBtn {
-            background: #007bff;
+            background: linear-gradient(45deg, #ba68c8, #9c27b0);
             color: white;
             border: none;
-            padding: 12px;
-            border-radius: 6px;
+            padding: 15px;
+            border-radius: 12px;
             width: 100%;
             font-weight: 600;
+            font-size: 16px;
             cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
         }
+        button#mainBtn:hover {
+            box-shadow: 0 5px 15px rgba(156, 39, 176, 0.4);
+            transform: translateY(-2px);
+        }
+        button#mainBtn:active {
+            transform: translateY(0);
+        }
+
+        /* Карточки постов */
         .post {
-            background: #fff;
-            border: 1px solid #eaeaea;
-            padding: 15px;
+            background: white;
+            border-radius: 15px;
+            padding: 18px;
             margin-top: 15px;
-            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
             width: 100%;
             max-width: 500px;
             position: relative;
+            border-left: 5px solid #e1bee7;
+            box-sizing: border-box;
+            transition: transform 0.2s;
         }
+        .post:hover {
+            transform: scale(1.01);
+        }
+        .post b {
+            color: #6a1b9a;
+            font-size: 1.1rem;
+        }
+
+        /* Кнопка лайка */
         .like-btn {
             cursor: pointer;
-            border: none;
-            background: #f8f9fa;
-            padding: 5px 12px;
+            border: 1px solid #f3e5f5;
+            background: #fffafa;
+            padding: 6px 15px;
             border-radius: 20px;
+            color: #8e24aa;
+            font-weight: bold;
+            transition: all 0.2s;
+            margin-top: 10px;
         }
-        .time { font-size: 11px; color: #999; float: right; }
-        .search-box { border-left: 4px solid #007bff; background: #eef6ff; }
+        .like-btn:hover {
+            background: #f3e5f5;
+            border-color: #ce93d8;
+        }
+
+        /* Поиск и время */
+        .time { 
+            font-size: 11px; 
+            color: #ab47bc; 
+            float: right; 
+        }
+        .search-box { 
+            border-left: 5px solid #ab47bc; 
+            background: #f8f0fb; 
+        }
+        .search-box input::placeholder {
+            color: #ba68c8;
+        }
+
+        /* Заголовок панели */
+        h3 {
+            margin-top: 0;
+            color: #4a148c;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -132,16 +217,14 @@
         });
     };
 
-    // 2. ИСПРАВЛЕННАЯ ЛЕНТА (Поиск теперь не конфликтует с индексами)
+    // 2. ИСПРАВЛЕННАЯ ЛЕНТА
     const renderFeed = (filterName = "") => {
         const colRef = collection(db, "requests");
         let q;
 
         if (filterName) {
-            // ВАЖНО: Убираем orderBy при поиске, чтобы не ломать базу без индексов
             q = query(colRef, where("name", "==", filterName));
         } else {
-            // Обычная лента с сортировкой по времени
             q = query(colRef, orderBy("timestamp", "desc"));
         }
 
