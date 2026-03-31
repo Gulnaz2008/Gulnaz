@@ -5,7 +5,7 @@
     <title>BaaS - Облачная регистрация</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f4f7f6;
             display: flex;
             flex-direction: column;
@@ -21,6 +21,21 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
             margin-bottom: 20px;
         }
+        /* Стили для необычной функции: ТОП Лидеров */
+        .leaders-panel {
+            background: #fff;
+            border: 2px solid #ffd700;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .leader-item {
+            display: inline-block;
+            margin: 0 10px;
+            font-size: 14px;
+        }
+        .leader-rank { color: #ffd700; font-weight: bold; font-size: 18px; }
+
         input {
             width: 100%;
             padding: 12px;
@@ -39,8 +54,6 @@
             font-weight: 600;
             cursor: pointer;
         }
-        button#mainBtn:hover { background: #0056b3; }
-        button:disabled { background: #ccc; }
         .post {
             background: #fff;
             border: 1px solid #eaeaea;
@@ -57,20 +70,19 @@
             background: #f8f9fa;
             padding: 5px 12px;
             border-radius: 20px;
+            transition: 0.2s;
         }
-        .time {
-            font-size: 11px;
-            color: #999;
-            float: right;
-        }
-        /* Стиль для поиска */
-        .search-box {
-            border-left: 4px solid #007bff;
-            background: #eef6ff;
-        }
+        .like-btn:active { transform: scale(1.2); }
+        .time { font-size: 11px; color: #999; float: right; }
+        .search-box { border-left: 4px solid #007bff; background: #eef6ff; }
     </style>
 </head>
 <body>
+
+<div class="container leaders-panel">
+    <h4 style="margin: 0 0 10px 0;">🏆 Зал славы (Топ-3)</h4>
+    <div id="leadersList">Загрузка чемпионов...</div>
+</div>
 
 <div class="container">
     <h3>Панель управления данными</h3>
@@ -80,7 +92,7 @@
 </div>
 
 <div class="container search-box">
-    <input type="text" id="searchInput" placeholder="🔍 Поиск по имени...">
+    <input type="text" id="searchInput" placeholder="🔍 Живой поиск...">
 </div>
 
 <div id="feed" style="width: 100%; max-width: 500px;"></div>
@@ -88,17 +100,8 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
     import {
-        getFirestore,
-        collection,
-        addDoc,
-        query,
-        orderBy,
-        onSnapshot,
-        serverTimestamp,
-        updateDoc,
-        doc,
-        increment,
-        where // Добавлен для поиска
+        getFirestore, collection, addDoc, query, orderBy, limit,
+        onSnapshot, serverTimestamp, updateDoc, doc, increment, where
     } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -113,42 +116,44 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // ФУНКЦИЯ 1: Форматирование даты (Helper function)
-    const formatFullDate = (timestamp) => {
-        if (!timestamp) return "...";
-        const date = timestamp.toDate();
-        return date.toLocaleDateString('ru-RU', { 
-            day: 'numeric', 
-            month: 'long', 
-            year: 'numeric', 
-            hour: '2-digit', 
-            minute: '2-digit' 
+    // ФУНКЦИЯ: Топ лидеров (сортировка по лайкам в реальном времени)
+    const syncLeaders = () => {
+        const qLeaders = query(collection(db, "requests"), orderBy("likes", "desc"), limit(3));
+        onSnapshot(qLeaders, (snap) => {
+            const list = document.getElementById('leadersList');
+            list.innerHTML = "";
+            let rank = 1;
+            snap.forEach(d => {
+                const data = d.data();
+                list.innerHTML += `
+                    <div class="leader-item">
+                        <div class="leader-rank">#${rank}</div>
+                        <b>${data.name}</b><br>
+                        <small>👍 ${data.likes || 0}</small>
+                    </div>
+                `;
+                rank++;
+            });
         });
     };
 
-    // ФУНКЦИЯ 2: Живой поиск (Query filtering)
+    // ФУНКЦИЯ: Лента сообщений
     const renderFeed = (filterName = "") => {
-        let q;
         const colRef = collection(db, "requests");
-        
-        if (filterName) {
-            // Фильтр по точному совпадению имени
-            q = query(colRef, where("name", "==", filterName), orderBy("timestamp", "desc"));
-        } else {
-            q = query(colRef, orderBy("timestamp", "desc"));
-        }
+        const q = filterName 
+            ? query(colRef, where("name", "==", filterName)) 
+            : query(colRef, orderBy("timestamp", "desc"));
 
         onSnapshot(q, (snapshot) => {
             const feed = document.getElementById('feed');
             feed.innerHTML = "";
             snapshot.forEach((docItem) => {
                 const data = docItem.data();
-                const timeStr = formatFullDate(data.timestamp); // Использование функции 1
-
+                const time = data.timestamp ? data.timestamp.toDate().toLocaleTimeString() : "...";
                 const post = document.createElement("div");
                 post.className = "post";
                 post.innerHTML = `
-                    <span class="time">${timeStr}</span>
+                    <span class="time">${time}</span>
                     <b>${data.name}</b>
                     <p style="margin: 5px 0; color: #555;">${data.email}</p>
                     <button class="like-btn" onclick="processLike('${docItem.id}')">
@@ -160,43 +165,23 @@
         });
     };
 
-    // Слушатель для поиска
-    document.getElementById('searchInput').oninput = (e) => {
-        renderFeed(e.target.value.trim());
-    };
-
-    // ЛАЙК (вынесен в window для доступа из HTML строк)
     window.processLike = async (id) => {
-        try {
-            const docRef = doc(db, "requests", id);
-            await updateDoc(docRef, { likes: increment(1) });
-        } catch (e) { console.error(e); }
+        await updateDoc(doc(db, "requests", id), { likes: increment(1) });
     };
 
-    // ОТПРАВКА
+    document.getElementById('searchInput').oninput = (e) => renderFeed(e.target.value.trim());
+
     document.getElementById('mainBtn').onclick = async () => {
-        const btn = document.getElementById('mainBtn');
-        const nameVal = document.getElementById('name').value.trim();
-        const emailVal = document.getElementById('email').value.trim();
-
-        if (!nameVal || !emailVal) return alert("Заполните все поля!");
-
-        btn.disabled = true;
-        try {
-            await addDoc(collection(db, "requests"), {
-                name: nameVal,
-                email: emailVal,
-                likes: 0,
-                timestamp: serverTimestamp()
-            });
-            document.getElementById('name').value = "";
-            document.getElementById('email').value = "";
-        } catch (e) { alert("Ошибка Firestore!"); }
-        btn.disabled = false;
+        const n = document.getElementById('name').value;
+        const e = document.getElementById('email').value;
+        if(!n || !e) return alert("Заполни поля!");
+        await addDoc(collection(db, "requests"), { name: n, email: e, likes: 0, timestamp: serverTimestamp() });
+        document.getElementById('name').value = ""; document.getElementById('email').value = "";
     };
 
-    // Первоначальный запуск ленты
+    // Запуск всего
     renderFeed();
+    syncLeaders();
 </script>
 </body>
 </html>
