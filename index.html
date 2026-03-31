@@ -21,7 +21,6 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
             margin-bottom: 20px;
         }
-        /* Стили для необычной функции: ТОП Лидеров */
         .leaders-panel {
             background: #fff;
             border: 2px solid #ffd700;
@@ -35,7 +34,6 @@
             font-size: 14px;
         }
         .leader-rank { color: #ffd700; font-weight: bold; font-size: 18px; }
-
         input {
             width: 100%;
             padding: 12px;
@@ -70,9 +68,7 @@
             background: #f8f9fa;
             padding: 5px 12px;
             border-radius: 20px;
-            transition: 0.2s;
         }
-        .like-btn:active { transform: scale(1.2); }
         .time { font-size: 11px; color: #999; float: right; }
         .search-box { border-left: 4px solid #007bff; background: #eef6ff; }
     </style>
@@ -92,7 +88,7 @@
 </div>
 
 <div class="container search-box">
-    <input type="text" id="searchInput" placeholder="🔍 Живой поиск...">
+    <input type="text" id="searchInput" placeholder="🔍 Введите точное имя для поиска...">
 </div>
 
 <div id="feed" style="width: 100%; max-width: 500px;"></div>
@@ -116,7 +112,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // ФУНКЦИЯ: Топ лидеров (сортировка по лайкам в реальном времени)
+    // 1. ТОП ЛИДЕРОВ
     const syncLeaders = () => {
         const qLeaders = query(collection(db, "requests"), orderBy("likes", "desc"), limit(3));
         onSnapshot(qLeaders, (snap) => {
@@ -130,19 +126,24 @@
                         <div class="leader-rank">#${rank}</div>
                         <b>${data.name}</b><br>
                         <small>👍 ${data.likes || 0}</small>
-                    </div>
-                `;
+                    </div>`;
                 rank++;
             });
         });
     };
 
-    // ФУНКЦИЯ: Лента сообщений
+    // 2. ИСПРАВЛЕННАЯ ЛЕНТА (Поиск теперь не конфликтует с индексами)
     const renderFeed = (filterName = "") => {
         const colRef = collection(db, "requests");
-        const q = filterName 
-            ? query(colRef, where("name", "==", filterName)) 
-            : query(colRef, orderBy("timestamp", "desc"));
+        let q;
+
+        if (filterName) {
+            // ВАЖНО: Убираем orderBy при поиске, чтобы не ломать базу без индексов
+            q = query(colRef, where("name", "==", filterName));
+        } else {
+            // Обычная лента с сортировкой по времени
+            q = query(colRef, orderBy("timestamp", "desc"));
+        }
 
         onSnapshot(q, (snapshot) => {
             const feed = document.getElementById('feed');
@@ -162,24 +163,41 @@
                 `;
                 feed.appendChild(post);
             });
+        }, (error) => {
+            console.error("Ошибка Firestore:", error);
         });
     };
 
     window.processLike = async (id) => {
-        await updateDoc(doc(db, "requests", id), { likes: increment(1) });
+        try {
+            await updateDoc(doc(db, "requests", id), { likes: increment(1) });
+        } catch(e) { console.error(e); }
     };
 
-    document.getElementById('searchInput').oninput = (e) => renderFeed(e.target.value.trim());
+    document.getElementById('searchInput').oninput = (e) => {
+        renderFeed(e.target.value.trim());
+    };
 
     document.getElementById('mainBtn').onclick = async () => {
-        const n = document.getElementById('name').value;
-        const e = document.getElementById('email').value;
+        const n = document.getElementById('name').value.trim();
+        const e = document.getElementById('email').value.trim();
         if(!n || !e) return alert("Заполни поля!");
-        await addDoc(collection(db, "requests"), { name: n, email: e, likes: 0, timestamp: serverTimestamp() });
-        document.getElementById('name').value = ""; document.getElementById('email').value = "";
+
+        try {
+            await addDoc(collection(db, "requests"), {
+                name: n,
+                email: e,
+                likes: 0,
+                timestamp: serverTimestamp()
+            });
+            document.getElementById('name').value = "";
+            document.getElementById('email').value = "";
+        } catch (err) {
+            alert("Ошибка при добавлении!");
+            console.error(err);
+        }
     };
 
-    // Запуск всего
     renderFeed();
     syncLeaders();
 </script>
