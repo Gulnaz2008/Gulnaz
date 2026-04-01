@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BaaS - Облачное приложение</title>
+    <title>BaaS - Облачное приложение с фото</title>
     <style>
-        /* ВАШИ СУЩЕСТВУЮЩИЕ СТИЛИ */
+        /* Сохраняем ваш дизайн */
         body {
-            font-family: 'Inter', 'Segoe UI', sans-serif;
+            font-family: 'Inter', sans-serif;
             background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
             min-height: 100vh;
             display: flex;
@@ -31,24 +31,21 @@
             border: 1px solid rgba(255, 255, 255, 0.3);
         }
 
-        /* НОВЫЕ СТИЛИ ИЗ КАРТИНОК */
         .auth-bar { background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .user-avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #007bff; }
+        .user-avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #9c27b0; }
         .post-avatar { width: 30px; height: 30px; border-radius: 50%; }
         .post-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
         
         button { cursor: pointer; transition: 0.3s; font-weight: 600; border-radius: 6px; padding: 12px; border: none; }
         button:hover { opacity: 0.9; }
-        button:disabled { background: #ccc; }
         .logout-btn { background: #ff4757; color: white; padding: 8px 15px; width: auto; font-size: 14px; }
-        #loginBtn { background: #007bff; color: white; width: 100%; }
+        #loginBtn { background: #007bff; color: white; width: 100%; font-size: 16px; }
 
-        /* ВАШИ СТИЛИ ДЛЯ ПОСТОВ И ЛИДЕРОВ */
-        .leaders-panel { background: #fff; border: 2px solid #ce93d8; text-align: center; }
-        .leader-item { display: inline-block; margin: 0 12px; font-size: 14px; padding: 10px; background: #fdf5ff; border-radius: 12px; border: 1px solid #f3e5f5; }
-        
         input { width: 100%; padding: 14px; margin: 8px 0; border: 2px solid #f3e5f5; border-radius: 12px; box-sizing: border-box; outline: none; }
         
+        /* Стили для загрузки фото */
+        #photoInput { background: #fff; border: 2px dashed #ce93d8; cursor: pointer; }
+
         button#mainBtn {
             background: linear-gradient(45deg, #ba68c8, #9c27b0);
             color: white;
@@ -62,12 +59,14 @@
             border-radius: 15px;
             padding: 18px;
             margin-top: 15px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
             width: 100%;
             max-width: 500px;
             border-left: 5px solid #e1bee7;
             box-sizing: border-box;
         }
+        /* Стиль для самой картинки в посте */
+        .post-img { width: 100%; border-radius: 10px; margin-top: 10px; display: block; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        
         .like-btn { cursor: pointer; border: 1px solid #f3e5f5; background: #fffafa; padding: 6px 15px; border-radius: 20px; color: #8e24aa; margin-top: 10px; }
         .time { font-size: 11px; color: #ab47bc; float: right; }
     </style>
@@ -75,7 +74,7 @@
 <body>
 
 <div id="authSection" class="container" style="text-align: center;">
-    <button id="loginBtn">Войти через Google</button>
+    <button id="loginBtn">Войти через Google 💖</button>
     <div id="userInfo" style="display: none;" class="auth-bar">
         <img id="userPhoto" class="user-avatar" src="" alt="Avatar">
         <span id="userName" style="font-weight: bold;"></span>
@@ -83,40 +82,28 @@
     </div>
 </div>
 
-<div class="container leaders-panel">
-    <h4 style="margin: 0 0 10px 0;">🏆 Зал славы (Топ-3)</h4>
-    <div id="leadersList">Загрузка чемпионов...</div>
-</div>
-
 <div id="messageForm" class="container" style="display: none;">
-    <h3 style="text-align: center;">Создать запись</h3>
-    <input type="text" id="name" placeholder="Имя профиля" readonly>
-    <input type="email" id="email" placeholder="Ваш Email" readonly>
-    <input type="text" id="content" placeholder="Что у вас нового?">
-    <button id="mainBtn">Опубликовать в облако</button>
-</div>
-
-<div class="container" style="border-left: 5px solid #ab47bc; background: #f8f0fb;">
-    <input type="text" id="searchInput" placeholder="🔍 Введите точное имя для поиска...">
+    <h3 style="text-align: center; margin-top: 0;">📸 Создать запись</h3>
+    <input type="text" id="content" placeholder="Напишите что-нибудь...">
+    <small>Добавить фото (необязательно):</small>
+    <input type="file" id="photoInput" accept="image/*">
+    <button id="mainBtn">Опубликовать</button>
 </div>
 
 <div id="feed" style="width: 100%; max-width: 500px;"></div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-    import {
-        getFirestore, collection, addDoc, query, orderBy, limit,
-        onSnapshot, serverTimestamp, updateDoc, doc, increment, where
-    } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
-    // ДОБАВЛЕН ИМПОРТ AUTH
+    import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, updateDoc, doc, increment } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+    // ДОБАВЛЯЕМ STORAGE
+    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-storage.js";
 
-    // ВАШ КОНФИГ
     const firebaseConfig = {
         apiKey: "AIzaSyAWQP2kf_fpAidqN68FIRxYCYVaHhdabgI",
         authDomain: "gulnaz-a1c58.firebaseapp.com",
         projectId: "gulnaz-a1c58",
-        storageBucket: "gulnaz-a1c58.appspot.com",
+        storageBucket: "gulnaz-a1c58.firebasestorage.app", // Проверьте этот путь в консоли!
         messagingSenderId: "55261769559",
         appId: "1:55261769559:web:f8b87fe5e36dd449f49812"
     };
@@ -124,115 +111,95 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
+    const storage = getStorage(app);
     const provider = new GoogleAuthProvider();
 
-    // --- ЛОГИКА АВТОРИЗАЦИИ (ИЗ КАРТИНОК) ---
-    const loginBtn = document.getElementById('loginBtn');
-    const logoutBtn = document.getElementById('logoutBtn');
-    const userInfo = document.getElementById('userInfo');
-    const messageForm = document.getElementById('messageForm');
-
-    loginBtn.onclick = () => signInWithPopup(auth, provider);
-    logoutBtn.onclick = () => signOut(auth);
-
+    // --- АВТОРИЗАЦИЯ ---
     onAuthStateChanged(auth, (user) => {
         if (user) {
-            loginBtn.style.display = 'none';
-            userInfo.style.display = 'flex';
-            messageForm.style.display = 'block';
+            document.getElementById('loginBtn').style.display = 'none';
+            document.getElementById('userInfo').style.display = 'flex';
+            document.getElementById('messageForm').style.display = 'block';
             document.getElementById('userName').innerText = user.displayName;
             document.getElementById('userPhoto').src = user.photoURL;
-            document.getElementById('name').value = user.displayName;
-            document.getElementById('email').value = user.email;
         } else {
-            loginBtn.style.display = 'block';
-            userInfo.style.display = 'none';
-            messageForm.style.display = 'none';
+            document.getElementById('loginBtn').style.display = 'block';
+            document.getElementById('userInfo').style.display = 'none';
+            document.getElementById('messageForm').style.display = 'none';
         }
     });
 
-    // --- ТОП ЛИДЕРОВ ---
-    const syncLeaders = () => {
-        const qLeaders = query(collection(db, "requests"), orderBy("likes", "desc"), limit(3));
-        onSnapshot(qLeaders, (snap) => {
-            const list = document.getElementById('leadersList');
-            list.innerHTML = "";
-            let rank = 1;
-            snap.forEach(d => {
-                const data = d.data();
-                list.innerHTML += `
-                    <div class="leader-item">
-                        <div class="leader-rank">#${rank}</div>
-                        <b>${data.name}</b><br>
-                        <small>👍 ${data.likes || 0}</small>
-                    </div>`;
-                rank++;
-            });
-        });
-    };
+    document.getElementById('loginBtn').onclick = () => signInWithPopup(auth, provider);
+    document.getElementById('logoutBtn').onclick = () => signOut(auth);
 
-    // --- ЛЕНТА (ОБНОВЛЕННАЯ С АВАТАРКАМИ) ---
-    const renderFeed = (filterName = "") => {
-        const colRef = collection(db, "requests");
-        let q = filterName ? query(colRef, where("name", "==", filterName)) : query(colRef, orderBy("timestamp", "desc"));
-
-        onSnapshot(q, (snapshot) => {
-            const feed = document.getElementById('feed');
-            feed.innerHTML = "";
-            snapshot.forEach((docItem) => {
-                const data = docItem.data();
-                const time = data.timestamp ? data.timestamp.toDate().toLocaleTimeString() : "...";
-                
-                const post = document.createElement("div");
-                post.className = "post";
-                post.innerHTML = `
-                    <div class="post-header">
-                        <img src="${data.photo || 'https://via.placeholder.com/30'}" class="post-avatar">
-                        <b>${data.name}</b>
-                        <span class="time">${time}</span>
-                    </div>
-                    <p style="margin: 5px 0; color: #555;">${data.text || data.email}</p>
-                    <button class="like-btn" onclick="processLike('${docItem.id}')">
-                        👍 ${data.likes || 0}
-                    </button>
-                `;
-                feed.appendChild(post);
-            });
-        });
-    };
-
-    window.processLike = async (id) => {
-        try {
-            await updateDoc(doc(db, "requests", id), { likes: increment(1) });
-        } catch(e) { console.error(e); }
-    };
-
-    document.getElementById('searchInput').oninput = (e) => renderFeed(e.target.value.trim());
-
-    // --- ПУБЛИКАЦИЯ (ИЗ КАРТИНКИ) ---
+    // --- ПУБЛИКАЦИЯ С КАРТИНКОЙ ---
     document.getElementById('mainBtn').onclick = async () => {
         const content = document.getElementById('content').value.trim();
-        if(!content) return alert("Введите текст сообщения!");
+        const file = document.getElementById('photoInput').files[0];
+        const btn = document.getElementById('mainBtn');
+
+        if(!content && !file) return alert("Нужен текст или фото!");
+
+        btn.disabled = true;
+        btn.innerText = "Загрузка...";
 
         try {
+            let imageUrl = null;
+
+            // Если файл выбран, загружаем его
+            if (file) {
+                const storageRef = ref(storage, `posts/${Date.now()}_${file.name}`);
+                const snapshot = await uploadBytes(storageRef, file);
+                imageUrl = await getDownloadURL(snapshot.ref);
+            }
+
+            // Сохраняем пост в Firestore
             await addDoc(collection(db, "requests"), {
                 name: auth.currentUser.displayName,
-                email: auth.currentUser.email,
-                photo: auth.currentUser.photoURL,
+                photo: auth.currentUser.photoURL, // Аватарка автора
+                postImage: imageUrl,            // Сама картинка поста
                 text: content,
                 likes: 0,
                 timestamp: serverTimestamp()
             });
+
             document.getElementById('content').value = "";
+            document.getElementById('photoInput').value = "";
+            alert("Готово! ✨");
         } catch (err) {
-            alert("Ошибка безопасности! Проверьте правила (Rules) в Firebase.");
+            alert("Доступ запрещен! Войдите в аккаунт.");
             console.error(err);
         }
+        btn.disabled = false;
+        btn.innerText = "Опубликовать";
     };
 
-    renderFeed();
-    syncLeaders();
-    window.db = db; // Для тестов в консоли
+    // --- ЛЕНТА ---
+    const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
+    onSnapshot(q, (snapshot) => {
+        const feed = document.getElementById('feed');
+        feed.innerHTML = "";
+        snapshot.forEach((docItem) => {
+            const data = docItem.data();
+            const post = document.createElement("div");
+            post.className = "post";
+            post.innerHTML = `
+                <div class="post-header">
+                    <img src="${data.photo || ''}" class="post-avatar">
+                    <b>${data.name}</b>
+                    <span class="time">${data.timestamp?.toDate().toLocaleTimeString() || '...'}</span>
+                </div>
+                <p>${data.text || ''}</p>
+                ${data.postImage ? `<img src="${data.postImage}" class="post-img">` : ''}
+                <button class="like-btn" onclick="processLike('${docItem.id}')">👍 ${data.likes || 0}</button>
+            `;
+            feed.appendChild(post);
+        });
+    });
+
+    window.processLike = async (id) => {
+        await updateDoc(doc(db, "requests", id), { likes: increment(1) });
+    };
 </script>
 </body>
 </html>
