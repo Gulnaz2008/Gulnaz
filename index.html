@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BaaS - Облачное приложение с фото</title>
+    <title>BaaS - Посты по ссылке</title>
     <style>
-        /* Сохраняем ваш дизайн */
         body {
             font-family: 'Inter', sans-serif;
             background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
@@ -15,7 +14,6 @@
             align-items: center;
             padding: 20px;
             margin: 0;
-            color: #4a148c;
         }
 
         .container {
@@ -26,31 +24,23 @@
             border-radius: 20px;
             box-shadow: 0 10px 25px rgba(155, 89, 182, 0.15);
             margin-bottom: 20px;
-            box-sizing: border-box;
             backdrop-filter: blur(5px);
             border: 1px solid rgba(255, 255, 255, 0.3);
         }
 
-        .auth-bar { background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .auth-bar { background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; }
         .user-avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #9c27b0; }
-        .post-avatar { width: 30px; height: 30px; border-radius: 50%; }
-        .post-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
         
         button { cursor: pointer; transition: 0.3s; font-weight: 600; border-radius: 6px; padding: 12px; border: none; }
-        button:hover { opacity: 0.9; }
-        .logout-btn { background: #ff4757; color: white; padding: 8px 15px; width: auto; font-size: 14px; }
-        #loginBtn { background: #007bff; color: white; width: 100%; font-size: 16px; }
+        #loginBtn { background: #007bff; color: white; width: 100%; }
+        .logout-btn { background: #ff4757; color: white; padding: 8px 15px; }
 
-        input { width: 100%; padding: 14px; margin: 8px 0; border: 2px solid #f3e5f5; border-radius: 12px; box-sizing: border-box; outline: none; }
+        input { width: 100%; padding: 14px; margin: 8px 0; border: 2px solid #f3e5f5; border-radius: 12px; box-sizing: border-box; }
         
-        /* Стили для загрузки фото */
-        #photoInput { background: #fff; border: 2px dashed #ce93d8; cursor: pointer; }
-
         button#mainBtn {
             background: linear-gradient(45deg, #ba68c8, #9c27b0);
             color: white;
             width: 100%;
-            font-size: 16px;
             margin-top: 10px;
         }
 
@@ -61,13 +51,13 @@
             margin-top: 15px;
             width: 100%;
             max-width: 500px;
-            border-left: 5px solid #e1bee7;
             box-sizing: border-box;
         }
-        /* Стиль для самой картинки в посте */
-        .post-img { width: 100%; border-radius: 10px; margin-top: 10px; display: block; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .post-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .post-avatar { width: 30px; height: 30px; border-radius: 50%; }
+        .post-img { width: 100%; border-radius: 10px; margin-top: 10px; }
         
-        .like-btn { cursor: pointer; border: 1px solid #f3e5f5; background: #fffafa; padding: 6px 15px; border-radius: 20px; color: #8e24aa; margin-top: 10px; }
+        .like-btn { cursor: pointer; border: 1px solid #f3e5f5; background: #fffafa; padding: 6px 15px; border-radius: 20px; color: #8e24aa; }
         .time { font-size: 11px; color: #ab47bc; float: right; }
     </style>
 </head>
@@ -83,10 +73,9 @@
 </div>
 
 <div id="messageForm" class="container" style="display: none;">
-    <h3 style="text-align: center; margin-top: 0;">📸 Создать запись</h3>
-    <input type="text" id="content" placeholder="Напишите что-нибудь...">
-    <small>Добавить фото (необязательно):</small>
-    <input type="file" id="photoInput" accept="image/*">
+    <h3 style="text-align: center; margin-top: 0; color: #4a148c;">✨ Новый пост</h3>
+    <input type="text" id="content" placeholder="Ваше сообщение...">
+    <input type="text" id="photoUrlInput" placeholder="Вставьте ссылку на картинку (URL)...">
     <button id="mainBtn">Опубликовать</button>
 </div>
 
@@ -96,14 +85,12 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
     import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, updateDoc, doc, increment } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
-    // ДОБАВЛЯЕМ STORAGE
-    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-storage.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyAWQP2kf_fpAidqN68FIRxYCYVaHhdabgI",
         authDomain: "gulnaz-a1c58.firebaseapp.com",
         projectId: "gulnaz-a1c58",
-        storageBucket: "gulnaz-a1c58.firebasestorage.app", // Проверьте этот путь в консоли!
+        storageBucket: "gulnaz-a1c58.firebasestorage.app",
         messagingSenderId: "55261769559",
         appId: "1:55261769559:web:f8b87fe5e36dd449f49812"
     };
@@ -111,7 +98,6 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
-    const storage = getStorage(app);
     const provider = new GoogleAuthProvider();
 
     // --- АВТОРИЗАЦИЯ ---
@@ -132,46 +118,28 @@
     document.getElementById('loginBtn').onclick = () => signInWithPopup(auth, provider);
     document.getElementById('logoutBtn').onclick = () => signOut(auth);
 
-    // --- ПУБЛИКАЦИЯ С КАРТИНКОЙ ---
+    // --- ПУБЛИКАЦИЯ ---
     document.getElementById('mainBtn').onclick = async () => {
         const content = document.getElementById('content').value.trim();
-        const file = document.getElementById('photoInput').files[0];
-        const btn = document.getElementById('mainBtn');
+        const photoUrl = document.getElementById('photoUrlInput').value.trim();
 
-        if(!content && !file) return alert("Нужен текст или фото!");
-
-        btn.disabled = true;
-        btn.innerText = "Загрузка...";
+        if(!content) return alert("Введите хотя бы текст!");
 
         try {
-            let imageUrl = null;
-
-            // Если файл выбран, загружаем его
-            if (file) {
-                const storageRef = ref(storage, `posts/${Date.now()}_${file.name}`);
-                const snapshot = await uploadBytes(storageRef, file);
-                imageUrl = await getDownloadURL(snapshot.ref);
-            }
-
-            // Сохраняем пост в Firestore
             await addDoc(collection(db, "requests"), {
                 name: auth.currentUser.displayName,
-                photo: auth.currentUser.photoURL, // Аватарка автора
-                postImage: imageUrl,            // Сама картинка поста
+                photo: auth.currentUser.photoURL,
+                postImage: photoUrl, // Сохраняем просто как строку текста
                 text: content,
                 likes: 0,
                 timestamp: serverTimestamp()
             });
 
             document.getElementById('content').value = "";
-            document.getElementById('photoInput').value = "";
-            alert("Готово! ✨");
+            document.getElementById('photoUrlInput').value = "";
         } catch (err) {
-            alert("Доступ запрещен! Войдите в аккаунт.");
-            console.error(err);
+            alert("Ошибка! Вы не авторизованы.");
         }
-        btn.disabled = false;
-        btn.innerText = "Опубликовать";
     };
 
     // --- ЛЕНТА ---
@@ -185,12 +153,12 @@
             post.className = "post";
             post.innerHTML = `
                 <div class="post-header">
-                    <img src="${data.photo || ''}" class="post-avatar">
+                    <img src="${data.photo}" class="post-avatar">
                     <b>${data.name}</b>
                     <span class="time">${data.timestamp?.toDate().toLocaleTimeString() || '...'}</span>
                 </div>
-                <p>${data.text || ''}</p>
-                ${data.postImage ? `<img src="${data.postImage}" class="post-img">` : ''}
+                <p>${data.text}</p>
+                ${data.postImage ? `<img src="${data.postImage}" class="post-img" onerror="this.style.display='none'">` : ''}
                 <button class="like-btn" onclick="processLike('${docItem.id}')">👍 ${data.likes || 0}</button>
             `;
             feed.appendChild(post);
@@ -200,6 +168,7 @@
     window.processLike = async (id) => {
         await updateDoc(doc(db, "requests", id), { likes: increment(1) });
     };
+    window.db = db;
 </script>
 </body>
 </html>
