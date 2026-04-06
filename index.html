@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BaaS - Соцсеть и ЛС</title>
+    <title>BaaS - Пурпурный Чат и Посты</title>
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background: #f0f2f5;
+            background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -19,86 +19,94 @@
         .container {
             width: 100%;
             max-width: 500px;
-            background: white;
+            background: rgba(255, 255, 255, 0.9);
             padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(155, 89, 182, 0.15);
             margin-bottom: 20px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
             box-sizing: border-box;
         }
 
-        .auth-bar { display: flex; align-items: center; gap: 15px; }
-        .user-avatar { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid #007bff; }
+        .auth-bar { background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; }
+        .user-avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #9c27b0; }
         
-        /* Стили кнопок */
-        button { cursor: pointer; transition: 0.3s; font-weight: 600; border-radius: 8px; padding: 12px; border: none; }
+        button { cursor: pointer; transition: 0.3s; font-weight: 600; border-radius: 6px; padding: 12px; border: none; }
         #loginBtn { background: #007bff; color: white; width: 100%; }
-        .logout-btn { background: none; color: #ff4757; padding: 0; font-size: 12px; text-decoration: underline; }
+        .logout-btn { background: #ff4757; color: white; padding: 8px 15px; }
 
-        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; }
-        #mainBtn { background: #007bff; color: white; width: 100%; margin-top: 10px; }
+        input { width: 100%; padding: 14px; margin: 8px 0; border: 2px solid #f3e5f5; border-radius: 12px; box-sizing: border-box; }
+        
+        button#mainBtn {
+            background: linear-gradient(45deg, #ba68c8, #9c27b0);
+            color: white;
+            width: 100%;
+            margin-top: 10px;
+        }
 
-        /* Лента постов */
-        .post { background: white; border-radius: 12px; padding: 15px; margin-top: 15px; width: 100%; max-width: 500px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .post {
+            background: white;
+            border-radius: 15px;
+            padding: 18px;
+            margin-top: 15px;
+            width: 100%;
+            max-width: 500px;
+            box-sizing: border-box;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
         .post-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-        .post-avatar { width: 35px; height: 35px; border-radius: 50%; }
+        .post-avatar { width: 30px; height: 30px; border-radius: 50%; }
         .post-img { width: 100%; border-radius: 10px; margin-top: 10px; }
-        .like-btn { cursor: pointer; border: 1px solid #eee; background: #f8f9fa; padding: 5px 12px; border-radius: 15px; font-size: 13px; }
+        
+        .like-btn { cursor: pointer; border: 1px solid #f3e5f5; background: #fffafa; padding: 6px 15px; border-radius: 20px; color: #8e24aa; }
+        .time { font-size: 11px; color: #ab47bc; float: right; }
 
-        /* --- СТИЛИ ЛИЧНЫХ СООБЩЕНИЙ (КАК НА ФОТО) --- */
-        .section-title { font-size: 14px; color: #65676b; margin-bottom: 15px; font-weight: 600; }
-        #usersList { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; border-bottom: 1px solid #eee; }
-        .user-card { text-align: center; cursor: pointer; min-width: 65px; }
-        .letter-avatar { 
-            width: 50px; height: 50px; border-radius: 50%; background: #00bcd4; 
-            color: white; display: flex; align-items: center; justify-content: center; 
-            font-size: 20px; font-weight: bold; margin: 0 auto 5px; 
-        }
-        .user-card.active .letter-avatar { border: 3px solid #007bff; transform: scale(1.05); }
-
-        #messagesDisplay { 
-            height: 300px; overflow-y: auto; display: flex; flex-direction: column; 
-            gap: 8px; padding: 10px; background: #f9f9f9; border-radius: 10px; border: 1px solid #eee;
-        }
-        .msg { padding: 8px 14px; border-radius: 18px; max-width: 75%; font-size: 14px; line-height: 1.4; }
-        .msg.sent { align-self: flex-end; background: #007bff; color: white; border-bottom-right-radius: 4px; }
-        .msg.received { align-self: flex-start; background: #e4e6eb; color: black; border-bottom-left-radius: 4px; }
-
-        .chat-input-group { display: flex; gap: 8px; margin-top: 10px; }
-        #sendDmBtn { background: #007bff; color: white; width: 45px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        /* Стили для ЛС */
+        #usersList { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; border-bottom: 1px solid #eee; }
+        .user-card { text-align: center; cursor: pointer; min-width: 60px; }
+        .user-card img { width: 50px; height: 50px; border-radius: 50%; border: 2px solid transparent; transition: 0.3s; object-fit: cover; }
+        .user-card.active img { border-color: #9c27b0; transform: scale(1.1); }
+        
+        #messagesDisplay { height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 10px; background: #fdf7ff; border-radius: 10px; }
+        .msg { padding: 10px 15px; border-radius: 15px; max-width: 80%; font-size: 14px; }
+        .msg.sent { align-self: flex-end; background: #9c27b0; color: white; border-bottom-right-radius: 2px; }
+        .msg.received { align-self: flex-start; background: #e1bee7; color: black; border-bottom-left-radius: 2px; }
+        
+        .chat-input-row { display: flex; gap: 10px; margin-top: 10px; }
+        #sendDmBtn { background: #9c27b0; color: white; width: 50px; height: 45px; border-radius: 12px; }
     </style>
 </head>
 <body>
 
-<div id="authSection" class="container">
-    <button id="loginBtn">Войти через Google 🔑</button>
+<div id="authSection" class="container" style="text-align: center;">
+    <button id="loginBtn">Войти через Google 💖</button>
     <div id="userInfo" style="display: none;" class="auth-bar">
-        <img id="userPhoto" class="user-avatar" src="" alt="">
-        <div>
-            <div id="userName" style="font-weight: bold;"></div>
-            <button id="logoutBtn" class="logout-btn">Выйти</button>
+        <img id="userPhoto" class="user-avatar" src="" alt="Avatar">
+        <div style="flex-grow: 1; text-align: left;">
+            <span id="userName" style="font-weight: bold; display: block;"></span>
+            <button id="logoutBtn" class="logout-btn" style="padding: 0; background: none; border: none; font-size: 12px; cursor: pointer;">Выйти</button>
         </div>
     </div>
 </div>
 
 <div id="dmSection" class="container" style="display: none;">
-    <div class="section-title">Выберите собеседника:</div>
+    <h3 style="margin-top: 0; color: #4a148c; font-size: 16px;">💬 Личные сообщения</h3>
     <div id="usersList"></div>
-    
     <div id="chatWindow" style="display: none;">
-        <div id="chatPartnerName" style="font-weight: bold; margin-bottom: 10px; color: #1c1e21;"></div>
+        <div id="chatPartnerName" style="font-weight: bold; margin-bottom: 5px; color: #6a1b9a; font-size: 14px;"></div>
         <div id="messagesDisplay"></div>
-        <div class="chat-input-group">
-            <input type="text" id="dmInput" placeholder="Ваше сообщение..." style="margin: 0;">
+        <div class="chat-input-row">
+            <input type="text" id="dmInput" placeholder="Напишите сообщение..." style="margin: 0;">
             <button id="sendDmBtn">➤</button>
         </div>
     </div>
 </div>
 
 <div id="messageForm" class="container" style="display: none;">
-    <h3 style="margin-top: 0; font-size: 16px;">Создать публикацию</h3>
+    <h3 style="text-align: center; margin-top: 0; color: #4a148c;">✨ Создать публикацию</h3>
     <input type="text" id="content" placeholder="Что у вас нового?">
-    <input type="text" id="photoUrlInput" placeholder="Ссылка на картинку (необязательно)">
+    <input type="text" id="photoUrlInput" placeholder="Ссылка на картинку (URL)...">
     <button id="mainBtn">Опубликовать</button>
 </div>
 
@@ -144,11 +152,11 @@
     document.getElementById('loginBtn').onclick = () => signInWithPopup(auth, provider);
     document.getElementById('logoutBtn').onclick = () => signOut(auth);
 
-    // --- ПОСТЫ ---
+    // --- ПУБЛИКАЦИЯ ---
     document.getElementById('mainBtn').onclick = async () => {
         const content = document.getElementById('content').value.trim();
         const photoUrl = document.getElementById('photoUrlInput').value.trim();
-        if(!content) return;
+        if(!content) return alert("Введите текст!");
 
         await addDoc(collection(db, "requests"), {
             name: auth.currentUser.displayName,
@@ -162,7 +170,9 @@
         document.getElementById('photoUrlInput').value = "";
     };
 
-    onSnapshot(query(collection(db, "requests"), orderBy("timestamp", "desc")), (snapshot) => {
+    // --- ЛЕНТА ---
+    const qPosts = query(collection(db, "requests"), orderBy("timestamp", "desc"));
+    onSnapshot(qPosts, (snapshot) => {
         const feed = document.getElementById('feed');
         feed.innerHTML = "";
         snapshot.forEach((docItem) => {
@@ -172,37 +182,34 @@
             post.innerHTML = `
                 <div class="post-header">
                     <img src="${data.photo}" class="post-avatar">
-                    <b style="font-size:14px;">${data.name}</b>
+                    <b>${data.name}</b>
+                    <span class="time">${data.timestamp?.toDate().toLocaleTimeString() || '...'}</span>
                 </div>
-                <p style="margin: 5px 0; font-size:15px;">${data.text}</p>
-                ${data.postImage ? `<img src="${data.postImage}" class="post-img">` : ''}
-                <div style="margin-top:10px;">
-                    <button class="like-btn" onclick="processLike('${docItem.id}')">👍 ${data.likes || 0}</button>
-                </div>
+                <p>${data.text}</p>
+                ${data.postImage ? `<img src="${data.postImage}" class="post-img" onerror="this.style.display='none'">` : ''}
+                <button class="like-btn" onclick="processLike('${docItem.id}')">👍 ${data.likes || 0}</button>
             `;
             feed.appendChild(post);
         });
     });
 
-    // --- ЛОГИКА ЧАТА (DM) ---
-    function loadUsersForChat() {
+    // --- ЛОГИКА ЧАТА (ТОЛЬКО ДЛЯ АВТОРОВ ПУБЛИКАЦИЙ) ---
+    async function loadUsersForChat() {
         onSnapshot(collection(db, "requests"), (snapshot) => {
-            const list = document.getElementById('usersList');
-            list.innerHTML = "";
+            const usersList = document.getElementById('usersList');
+            usersList.innerHTML = "";
             const seen = new Set();
 
             snapshot.forEach(doc => {
                 const u = doc.data();
+                // Фильтр: если этот человек сделал пост и это не я
                 if (!seen.has(u.name) && u.name !== auth.currentUser.displayName) {
                     seen.add(u.name);
                     const div = document.createElement('div');
                     div.className = 'user-card';
-                    div.innerHTML = `
-                        <div class="letter-avatar">${u.name[0]}</div>
-                        <div style="font-size:11px; color:#333;">${u.name.split(' ')[0]}</div>
-                    `;
+                    div.innerHTML = `<img src="${u.photo}"> <div style="font-size:10px; margin-top:4px;">${u.name.split(' ')[0]}</div>`;
                     div.onclick = () => openChat(u.name);
-                    list.appendChild(div);
+                    usersList.appendChild(div);
                 }
             });
         });
@@ -234,16 +241,16 @@
     }
 
     document.getElementById('sendDmBtn').onclick = async () => {
-        const input = document.getElementById('dmInput');
-        if (!input.value.trim() || !activeChatPartner) return;
+        const text = document.getElementById('dmInput').value.trim();
+        if (!text || !activeChatPartner) return;
 
         await addDoc(collection(db, "messages"), {
             sender: auth.currentUser.displayName,
             receiver: activeChatPartner,
-            text: input.value,
+            text: text,
             timestamp: serverTimestamp()
         });
-        input.value = "";
+        document.getElementById('dmInput').value = "";
     };
 
     window.processLike = (id) => updateDoc(doc(db, "requests", id), { likes: increment(1) });
