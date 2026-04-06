@@ -3,27 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BaaS - Личные сообщения</title>
+    <title>BaaS - Чат</title>
     <style>
-        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
-        .container { width: 100%; max-width: 550px; background: rgba(255, 255, 255, 0.95); padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(155, 89, 182, 0.15); margin-bottom: 20px; box-sizing: border-box; }
-        .auth-bar { background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; border: 1px solid #eee; }
-        .user-avatar { width: 45px; height: 45px; border-radius: 50%; border: 2px solid #9c27b0; object-fit: cover; }
-        button { cursor: pointer; transition: 0.3s; font-weight: 600; border-radius: 8px; padding: 12px; border: none; }
-        #loginBtn { background: #007bff; color: white; width: 100%; }
-        .logout-btn { background: #ff4757; color: white; padding: 8px 15px; font-size: 12px; }
-        input { width: 100%; padding: 14px; margin: 8px 0; border: 2px solid #f3e5f5; border-radius: 12px; box-sizing: border-box; outline: none; }
-        #mainBtn { background: linear-gradient(45deg, #ba68c8, #9c27b0); color: white; width: 100%; }
-        #usersList { display: flex; gap: 15px; overflow-x: auto; padding: 10px 0; }
-        .user-card { text-align: center; cursor: pointer; min-width: 70px; }
-        .user-card img { width: 55px; height: 55px; border-radius: 50%; border: 2px solid #e1bee7; }
-        .user-card.active img { border-color: #9c27b0; border-width: 3px; }
-        #messagesDisplay { height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 10px; background: #fdfbff; border-radius: 15px; }
-        .msg { padding: 10px 14px; border-radius: 15px; max-width: 75%; font-size: 14px; }
+        body { font-family: 'Inter', sans-serif; background: #f3e5f5; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .container { width: 100%; max-width: 500px; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .auth-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+        .user-avatar { width: 40px; height: 40px; border-radius: 50%; }
+        button { cursor: pointer; padding: 10px; border-radius: 8px; border: none; font-weight: bold; }
+        #loginBtn { background: #007bff; color: white; width: 100%; font-size: 18px; }
+        .logout-btn { background: #ff4757; color: white; }
+        input { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; }
+        #usersList { display: flex; gap: 10px; overflow-x: auto; padding: 10px 0; }
+        .user-card { cursor: pointer; text-align: center; min-width: 60px; }
+        .user-card img { width: 50px; height: 50px; border-radius: 50%; border: 2px solid transparent; }
+        .user-card.active img { border-color: #9c27b0; }
+        #messagesDisplay { height: 250px; overflow-y: auto; background: #fafafa; border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 5px; }
+        .msg { padding: 8px 12px; border-radius: 12px; max-width: 80%; font-size: 14px; }
         .msg.sent { align-self: flex-end; background: #9c27b0; color: white; }
-        .msg.received { align-self: flex-start; background: #f1f0f0; color: #333; }
-        .post { background: white; border-radius: 15px; padding: 18px; margin-top: 15px; width: 100%; box-sizing: border-box; }
-        .post-img { width: 100%; border-radius: 10px; margin-top: 10px; }
+        .msg.received { align-self: flex-start; background: #eee; }
+        .post { background: white; padding: 15px; border-radius: 15px; margin-top: 10px; width: 100%; max-width: 500px; }
     </style>
 </head>
 <body>
@@ -31,39 +29,35 @@
 <div id="authSection" class="container" style="text-align: center;">
     <button id="loginBtn">Войти через Google</button>
     <div id="userInfo" style="display: none;" class="auth-bar">
-        <img id="userPhoto" class="user-avatar" src="" alt="">
-        <div style="flex-grow: 1; text-align: left;">
-            <b id="userName"></b>
-            <div style="font-size: 10px; color: green;">Онлайн</div>
-        </div>
+        <img id="userPhoto" class="user-avatar" src="">
+        <b id="userName" style="flex-grow: 1; text-align: left;"></b>
         <button id="logoutBtn" class="logout-btn">Выйти</button>
     </div>
 </div>
 
 <div id="dmSection" class="container" style="display: none;">
-    <h3 style="color: #4a148c; text-align: center;">💬 Личные сообщения</h3>
+    <h3>💬 Личные сообщения</h3>
     <div id="usersList"></div>
     <div id="chatWindow" style="display: none;">
         <div id="messagesDisplay"></div>
-        <div style="display: flex; gap: 8px; margin-top: 10px;">
-            <input type="text" id="dmInput" placeholder="Ваше сообщение...">
+        <div style="display: flex; gap: 5px; margin-top: 10px;">
+            <input type="text" id="dmInput" placeholder="Сообщение...">
             <button id="sendDmBtn" style="background: #9c27b0; color: white;">➤</button>
         </div>
     </div>
 </div>
 
 <div id="messageForm" class="container" style="display: none;">
-    <h3 style="color: #4a148c; text-align: center;">✨ Создать пост</h3>
+    <h3>✨ Создать пост</h3>
     <input type="text" id="content" placeholder="Текст поста...">
-    <input type="text" id="photoUrlInput" placeholder="Ссылка на фото...">
-    <button id="mainBtn">Опубликовать</button>
+    <button id="mainBtn" style="background: #9c27b0; color: white; width: 100%;">Опубликовать</button>
 </div>
 
-<div id="feed" style="width: 100%; max-width: 550px;"></div>
+<div id="feed"></div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, updateDoc, doc, increment } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -93,24 +87,22 @@
             document.getElementById('userPhoto').src = user.photoURL;
             loadUsers();
         } else {
-            location.reload();
+            document.getElementById('loginBtn').style.display = 'block';
+            document.getElementById('userInfo').style.display = 'none';
         }
     });
 
-    document.getElementById('loginBtn').onclick = () => signInWithPopup(auth, provider);
-    document.getElementById('logoutBtn').onclick = () => signOut(auth);
+    document.getElementById('loginBtn').onclick = () => signInWithPopup(auth, provider).catch(e => alert(e.message));
+    document.getElementById('logoutBtn').onclick = () => signOut(auth).then(() => location.reload());
 
-    // --- ЛОГИКА ПОСТОВ ---
     document.getElementById('mainBtn').onclick = async () => {
         const text = document.getElementById('content').value;
-        if(!text) return;
+        if (!text) return;
         await addDoc(collection(db, "requests"), {
             uid: auth.currentUser.uid,
             name: auth.currentUser.displayName,
             photo: auth.currentUser.photoURL,
             text: text,
-            postImage: document.getElementById('photoUrlInput').value,
-            likes: 0,
             timestamp: serverTimestamp()
         });
         document.getElementById('content').value = "";
@@ -121,15 +113,13 @@
         feed.innerHTML = "";
         snaps.forEach(d => {
             const data = d.data();
-            const post = document.createElement('div');
-            post.className = 'post';
-            post.innerHTML = `<div class="post-header"><img src="${data.photo}" class="post-avatar"><b>${data.name}</b></div>
-            <p>${data.text}</p>${data.postImage ? `<img src="${data.postImage}" class="post-img">`:''}`;
-            feed.appendChild(post);
+            const div = document.createElement('div');
+            div.className = 'post';
+            div.innerHTML = `<b>${data.name}</b><p>${data.text}</p>`;
+            feed.appendChild(div);
         });
     });
 
-    // --- ЛОГИКА ЧАТА ---
     function loadUsers() {
         onSnapshot(collection(db, "requests"), (snaps) => {
             const list = document.getElementById('usersList');
@@ -142,18 +132,21 @@
                     const card = document.createElement('div');
                     card.className = 'user-card';
                     card.innerHTML = `<img src="${u.photo}"><div>${u.name.split(' ')[0]}</div>`;
-                    card.onclick = () => startChat(u.uid, u.name);
+                    card.onclick = () => {
+                        document.querySelectorAll('.user-card').forEach(c => c.classList.remove('active'));
+                        card.classList.add('active');
+                        startChat(u.uid);
+                    };
                     list.appendChild(card);
                 }
             });
         });
     }
 
-    function startChat(id, name) {
+    function startChat(id) {
         activePartnerId = id;
         document.getElementById('chatWindow').style.display = 'block';
-        if(unsubMsgs) unsubMsgs();
-        
+        if (unsubMsgs) unsubMsgs();
         unsubMsgs = onSnapshot(query(collection(db, "messages"), orderBy("timestamp", "asc")), (snaps) => {
             const disp = document.getElementById('messagesDisplay');
             disp.innerHTML = "";
@@ -173,16 +166,14 @@
 
     document.getElementById('sendDmBtn').onclick = async () => {
         const input = document.getElementById('dmInput');
-        if(!input.value || !activePartnerId) return;
-        try {
-            await addDoc(collection(db, "messages"), {
-                senderId: auth.currentUser.uid,
-                receiverId: activePartnerId,
-                text: input.value,
-                timestamp: serverTimestamp()
-            });
-            input.value = "";
-        } catch(e) { alert("Ошибка отправки! Проверьте Rules в Firebase."); }
+        if (!input.value || !activePartnerId) return;
+        await addDoc(collection(db, "messages"), {
+            senderId: auth.currentUser.uid,
+            receiverId: activePartnerId,
+            text: input.value,
+            timestamp: serverTimestamp()
+        });
+        input.value = "";
     };
 </script>
 </body>
