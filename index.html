@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BaaS - Посты по ссылке</title>
+    <title>BaaS - Посты и ЛС</title>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -26,6 +26,7 @@
             margin-bottom: 20px;
             backdrop-filter: blur(5px);
             border: 1px solid rgba(255, 255, 255, 0.3);
+            box-sizing: border-box;
         }
 
         .auth-bar { background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; }
@@ -59,6 +60,16 @@
         
         .like-btn { cursor: pointer; border: 1px solid #f3e5f5; background: #fffafa; padding: 6px 15px; border-radius: 20px; color: #8e24aa; }
         .time { font-size: 11px; color: #ab47bc; float: right; }
+
+        /* Стили для ЛС */
+        #usersList { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; border-bottom: 1px solid #eee; }
+        .user-card { text-align: center; cursor: pointer; min-width: 60px; }
+        .user-card img { width: 50px; height: 50px; border-radius: 50%; border: 2px solid transparent; transition: 0.3s; }
+        .user-card.active img { border-color: #9c27b0; transform: scale(1.1); }
+        #messagesDisplay { height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 10px; background: #f9f9f9; border-radius: 10px; }
+        .msg { padding: 10px 15px; border-radius: 15px; max-width: 80%; font-size: 14px; }
+        .msg.sent { align-self: flex-end; background: #9c27b0; color: white; border-bottom-right-radius: 2px; }
+        .msg.received { align-self: flex-start; background: #e0e0e0; color: black; border-bottom-left-radius: 2px; }
     </style>
 </head>
 <body>
@@ -69,6 +80,18 @@
         <img id="userPhoto" class="user-avatar" src="" alt="Avatar">
         <span id="userName" style="font-weight: bold;"></span>
         <button id="logoutBtn" class="logout-btn">Выйти</button>
+    </div>
+</div>
+
+<div id="dmSection" class="container" style="display: none;">
+    <h3 style="margin-top: 0; color: #4a148c; text-align: center;">💬 Личные сообщения</h3>
+    <div id="usersList"></div>
+    <div id="chatWindow" style="display: none;">
+        <div id="messagesDisplay"></div>
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <input type="text" id="dmInput" placeholder="Напишите сообщение..." style="margin: 0;">
+            <button id="sendDmBtn" style="background: #9c27b0; color: white; width: 60px;">➤</button>
+        </div>
     </div>
 </div>
 
@@ -83,7 +106,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, updateDoc, doc, increment } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, updateDoc, doc, increment, where } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -100,51 +123,51 @@
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
 
+    let activeChatPartner = null;
+    let unsubscribeMessages = null;
+
     // --- АВТОРИЗАЦИЯ ---
     onAuthStateChanged(auth, (user) => {
-        if (user) {
-            document.getElementById('loginBtn').style.display = 'none';
-            document.getElementById('userInfo').style.display = 'flex';
-            document.getElementById('messageForm').style.display = 'block';
+        const isAuth = !!user;
+        document.getElementById('loginBtn').style.display = isAuth ? 'none' : 'block';
+        document.getElementById('userInfo').style.display = isAuth ? 'flex' : 'none';
+        document.getElementById('messageForm').style.display = isAuth ? 'block' : 'none';
+        document.getElementById('dmSection').style.display = isAuth ? 'block' : 'none';
+
+        if (isAuth) {
             document.getElementById('userName').innerText = user.displayName;
             document.getElementById('userPhoto').src = user.photoURL;
-        } else {
-            document.getElementById('loginBtn').style.display = 'block';
-            document.getElementById('userInfo').style.display = 'none';
-            document.getElementById('messageForm').style.display = 'none';
+            loadUsersForChat();
         }
     });
 
     document.getElementById('loginBtn').onclick = () => signInWithPopup(auth, provider);
-    document.getElementById('logoutBtn').onclick = () => signOut(auth);
+    document.getElementById('logoutBtn').onclick = () => {
+        signOut(auth);
+        location.reload();
+    };
 
-    // --- ПУБЛИКАЦИЯ ---
+    // --- ПУБЛИКАЦИЯ ПОСТА ---
     document.getElementById('mainBtn').onclick = async () => {
         const content = document.getElementById('content').value.trim();
         const photoUrl = document.getElementById('photoUrlInput').value.trim();
+        if(!content) return alert("Введите текст!");
 
-        if(!content) return alert("Введите хотя бы текст!");
-
-        try {
-            await addDoc(collection(db, "requests"), {
-                name: auth.currentUser.displayName,
-                photo: auth.currentUser.photoURL,
-                postImage: photoUrl, // Сохраняем просто как строку текста
-                text: content,
-                likes: 0,
-                timestamp: serverTimestamp()
-            });
-
-            document.getElementById('content').value = "";
-            document.getElementById('photoUrlInput').value = "";
-        } catch (err) {
-            alert("Ошибка! Вы не авторизованы.");
-        }
+        await addDoc(collection(db, "requests"), {
+            name: auth.currentUser.displayName,
+            photo: auth.currentUser.photoURL,
+            postImage: photoUrl,
+            text: content,
+            likes: 0,
+            timestamp: serverTimestamp()
+        });
+        document.getElementById('content').value = "";
+        document.getElementById('photoUrlInput').value = "";
     };
 
-    // --- ЛЕНТА ---
-    const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
-    onSnapshot(q, (snapshot) => {
+    // --- ЛЕНТА ПОСТОВ ---
+    const qPosts = query(collection(db, "requests"), orderBy("timestamp", "desc"));
+    onSnapshot(qPosts, (snapshot) => {
         const feed = document.getElementById('feed');
         feed.innerHTML = "";
         snapshot.forEach((docItem) => {
@@ -165,10 +188,67 @@
         });
     });
 
-    window.processLike = async (id) => {
-        await updateDoc(doc(db, "requests", id), { likes: increment(1) });
+    // --- ЛОГИКА ЧАТА (ЛС) ---
+    async function loadUsersForChat() {
+        // Загружаем уникальных авторов постов для списка контактов
+        onSnapshot(collection(db, "requests"), (snapshot) => {
+            const usersList = document.getElementById('usersList');
+            usersList.innerHTML = "";
+            const seen = new Set();
+
+            snapshot.forEach(doc => {
+                const u = doc.data();
+                if (!seen.has(u.name) && u.name !== auth.currentUser.displayName) {
+                    seen.add(u.name);
+                    const div = document.createElement('div');
+                    div.className = 'user-card';
+                    div.innerHTML = `<img src="${u.photo}"> <div style="font-size:10px">${u.name.split(' ')[0]}</div>`;
+                    div.onclick = () => openChat(u.name);
+                    usersList.appendChild(div);
+                }
+            });
+        });
+    }
+
+    function openChat(partnerName) {
+        activeChatPartner = partnerName;
+        document.getElementById('chatWindow').style.display = 'block';
+        
+        if (unsubscribeMessages) unsubscribeMessages();
+
+        const qMsgs = query(collection(db, "messages"), orderBy("timestamp", "asc"));
+        unsubscribeMessages = onSnapshot(qMsgs, (snapshot) => {
+            const display = document.getElementById('messagesDisplay');
+            display.innerHTML = "";
+            snapshot.forEach(doc => {
+                const m = doc.data();
+                // Фильтр: только сообщения между мной и партнером
+                if ((m.sender === auth.currentUser.displayName && m.receiver === partnerName) || 
+                    (m.sender === partnerName && m.receiver === auth.currentUser.displayName)) {
+                    const mDiv = document.createElement('div');
+                    mDiv.className = `msg ${m.sender === auth.currentUser.displayName ? 'sent' : 'received'}`;
+                    mDiv.innerText = m.text;
+                    display.appendChild(mDiv);
+                }
+            });
+            display.scrollTop = display.scrollHeight;
+        });
+    }
+
+    document.getElementById('sendDmBtn').onclick = async () => {
+        const text = document.getElementById('dmInput').value.trim();
+        if (!text || !activeChatPartner) return;
+
+        await addDoc(collection(db, "messages"), {
+            sender: auth.currentUser.displayName,
+            receiver: activeChatPartner,
+            text: text,
+            timestamp: serverTimestamp()
+        });
+        document.getElementById('dmInput').value = "";
     };
-    window.db = db;
+
+    window.processLike = (id) => updateDoc(doc(db, "requests", id), { likes: increment(1) });
 </script>
 </body>
 </html>
