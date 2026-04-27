@@ -31,9 +31,8 @@
         button { cursor: pointer; transition: 0.3s; font-weight: 600; border-radius: 12px; padding: 12px 20px; border: none; color: white; }
         .btn-study { background: #4CAF50; }
         .btn-rest { background: #FFC107; }
-        .btn-coffee { background: #795548; }
         button:hover { transform: translateY(-2px); opacity: 0.9; }
-        .post { background: white; border-radius: 15px; padding: 18px; margin-top: 15px; width: 100%; max-width: 500px; box-sizing: border-box; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .post { background: white; border-radius: 15px; padding: 18px; margin-top: 15px; width: 100%; max-width: 500px; box-sizing: border-box; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: left; }
         .post-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
         .status-dot { width: 12px; height: 12px; border-radius: 50%; }
         #feed { width: 100%; max-width: 500px; }
@@ -44,8 +43,8 @@
 <div class="container">
     <h3 style="color: #4a148c; margin-top: 0;">✨ Мой статус</h3>
     <div class="status-buttons">
-        <button class="btn-study" onclick="changeStatus('📚 Учусь', '#4CAF50')">📚 Учусь</button>
-        <button class="btn-rest" onclick="changeStatus('☕ Отдыхаю', '#FFC107')">☕ Отдых</button>
+        <button class="btn-study" onclick="window.changeStatus('📚 Учусь', '#4CAF50')">📚 Учусь</button>
+        <button class="btn-rest" onclick="window.changeStatus('☕ Отдыхаю', '#FFC107')">☕ Отдых</button>
     </div>
 </div>
 
@@ -54,22 +53,23 @@
 <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-    // Данные из твоего скриншота
     const URL = 'https://urxuxcaijnyagknanogv.supabase.co'; 
-    const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVyeHV4Y2Fpam55YWdrbmFub2d2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2ODA2MTAsImV4cCI6MjA5MjI1NjYxMH0.a4VMlgaEiZknBNl-eazc6Ry37syVjnKanPtn14F7XeA'; // Твой Publishable key
+    
+    // ВАЖНО: СЮДА НУЖНО ВСТАВИТЬ ПОЛНЫЙ КЛЮЧ ИЗ SUPABASE БЕЗ ТОЧЕК В КОНЦЕ
+    const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVyeHV4Y2Fpam55YWdrbmFub2d2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2ODA2MTAsImV4cCI6MjA5MjI1NjYxMH0.a4VMlgaEiZknBNl-eazc6Ry37syVjnKanPtn14F7XeA; 
+    
     const supabase = createClient(URL, KEY);
-
-    // Твой ID из таблицы Gulnaz
     const MY_ID = '4bc5694e-89f8-47d9-9b60-2d3bd2439122'; 
 
+    // Делаем функцию глобальной, чтобы кнопки её видели
     window.changeStatus = async (text, color) => {
         const { error } = await supabase
-            .from('Gulnaz') // Твоя таблица называется Gulnaz
+            .from('Gulnaz') 
             .update({ status: text, color: color })
             .eq('id', MY_ID);
 
         if (error) {
-            alert("Ошибка обновления!");
+            alert("Ошибка обновления: " + error.message);
             console.error(error);
         } else {
             fetchGroup();
