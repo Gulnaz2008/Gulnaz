@@ -2,6 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Мой статус | Gulnaz Edition</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
@@ -22,7 +23,7 @@
         .btn-rest { background: #ff4757; }
 
         .user-item { display: flex; align-items: center; padding: 15px; background: white; border-radius: 20px; margin-bottom: 10px; text-align: left; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .status-dot { width: 15px; height: 15px; border-radius: 50%; margin-right: 15px; }
+        .status-dot { width: 15px; height: 15px; border-radius: 50%; margin-right: 15px; flex-shrink: 0; }
         
         #myInfo { color: #7b1fa2; font-weight: bold; margin-bottom: 15px; font-size: 18px; }
     </style>
@@ -48,25 +49,28 @@
     <script type="module">
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-        // ТВОИ ДАННЫЕ (ПРОВЕРЕНО)
         const URL = 'https://urxuxcaijnyagknanogv.supabase.co';
         const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVyeHV4Y2Fpam55YWdrbmFub2d2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2ODA2MTAsImV4cCI6MjA5MjI1NjYxMH0.a4VMlgaEiZknBNl-eazc6Ry37syVjnKanPtn14F7XeA';
         const supabase = createClient(URL, KEY);
 
-        const MY_ID = '4bc5694e-89f8-47d9-9b60-2d3bd2439122';
+        // ID взят из второй строки вашего скриншота (Gulnaz / Online)
+        const MY_ID = 'a0ba9e82-04b4-4457-9c0b-282ca0e3c49a';
 
         // Глобальная функция для кнопок
         window.changeStatus = async (statusText, colorCode) => {
+            console.log("Обновление статуса для:", MY_ID);
+            
             const { error } = await supabase
-                .from('Gulnaz') // Таблица Gulnaz
+                .from('Gulnaz')
                 .update({ status: statusText, color: colorCode })
                 .eq('id', MY_ID);
 
             if (error) {
-                console.error("Ошибка при обновлении:", error);
+                console.error("Ошибка Supabase:", error);
                 alert("Не удалось обновить: " + error.message);
             } else {
-                fetchGroup();
+                console.log("Статус успешно обновлен!");
+                fetchGroup(); // Сразу обновляем список на экране
             }
         };
 
@@ -95,10 +99,10 @@
                     if (me) {
                         document.getElementById('myInfo').innerText = `Привет, ${me.username}! ✨`;
                     } else {
-                        document.getElementById('myInfo').innerText = `Профиль не найден в базе`;
+                        document.getElementById('myInfo').innerText = `Профиль не найден (ID: ${MY_ID.substring(0,8)}...)`;
                     }
                 } else {
-                    list.innerHTML = "В таблице Gulnaz пока нет данных.";
+                    list.innerHTML = "В таблице нет данных.";
                 }
             } catch (err) {
                 console.error("Ошибка загрузки:", err);
@@ -106,7 +110,10 @@
             }
         }
 
+        // Запуск при загрузке
         fetchGroup();
+        
+        // Автообновление каждые 5 секунд
         setInterval(fetchGroup, 5000);
     </script>
 </body>
