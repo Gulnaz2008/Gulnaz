@@ -97,7 +97,7 @@
 
                     const me = data.find(u => u.id === MY_ID);
                     if (me) {
-                        document.getElementById('myInfo').innerText = `Привет, ${me.username}! ✨`;
+                        document.getElementById('myInfo').innerText = `Привет, ${me.username}! `;
                     } else {
                         document.getElementById('myInfo').innerText = `Профиль не найден (ID: ${MY_ID.substring(0,8)}...)`;
                     }
