@@ -22,22 +22,36 @@
         .btn-game { background: #17a2b8; }
         .btn-rest { background: #ff4757; }
 
+        /* Стили для кнопок авторизации */
+        .btn-google { background: #ffffff; color: #757575; border: 1px solid #ddd; padding: 12px; width: 100%; border-radius: 15px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn-logout { background: transparent; color: #ff4757; border: none; cursor: pointer; font-size: 14px; text-decoration: underline; margin-top: 10px; display: inline-block; }
+
         .user-item { display: flex; align-items: center; padding: 15px; background: white; border-radius: 20px; margin-bottom: 10px; text-align: left; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         .status-dot { width: 15px; height: 15px; border-radius: 50%; margin-right: 15px; flex-shrink: 0; }
         
         #myInfo { color: #7b1fa2; font-weight: bold; margin-bottom: 15px; font-size: 18px; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
     <div class="card">
         <h2>Мой профиль</h2>
-        <div id="myInfo">Подключение к системе...</div>
-        <div class="buttons-grid">
-            <button class="status-btn btn-study" onclick="changeStatus('📚 Учусь', '#4CAF50')">📚 Учусь</button>
-            <button class="status-btn btn-coffee" onclick="changeStatus('☕ Отдыхаю', '#FFC107')">☕ Отдых</button>
-            <button class="status-btn btn-game" onclick="changeStatus('🎮 В игре', '#17a2b8')">🎮 В игре</button>
-            <button class="status-btn btn-rest" onclick="changeStatus('😴 Сплю', '#ff4757')">😴 Сплю</button>
+        
+        <button id="loginBtn" class="btn-google">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_構成_2015.svg" width="18" alt="Google">
+            Войти через Google
+        </button>
+
+        <div id="profileContent" class="hidden">
+            <div id="myInfo">Подключение к системе...</div>
+            <div class="buttons-grid">
+                <button class="status-btn btn-study" onclick="changeStatus('📚 Учусь', '#4CAF50')">📚 Учусь</button>
+                <button class="status-btn btn-coffee" onclick="changeStatus('☕ Отдыхаю', '#FFC107')">☕ Отдых</button>
+                <button class="status-btn btn-game" onclick="changeStatus('🎮 В игре', '#17a2b8')">🎮 В игре</button>
+                <button class="status-btn btn-rest" onclick="changeStatus('😴 Сплю', '#ff4757')">😴 Сплю</button>
+            </div>
+            <button id="logoutBtn" class="btn-logout">Выйти из аккаунта</button>
         </div>
     </div>
 
@@ -50,14 +64,59 @@
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
         const URL = 'https://urxuxcaijnyagknanogv.supabase.co';
-        const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVyeHV4Y2Fpam55YWdrbmFub2d2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2ODA2MTAsImV4cCI6MjA5MjI1NjYxMH0.a4VMlgaEiZknBNl-eazc6Ry37syVjnKanPtn14F7XeA';
+        const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInRefiI6InVyeHV4Y2Fpam55YWdrbmFub2d2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2ODA2MTAsImV4cCI6MjA5MjI1NjYxMH0.a4VMlgaEiZknBNl-eazc6Ry37syVjnKanPtn14F7XeA';
         const supabase = createClient(URL, KEY);
 
-        // ID взят из второй строки вашего скриншота (Gulnaz / Online)
-        const MY_ID = 'a0ba9e82-04b4-4457-9c0b-282ca0e3c49a';
+        // Теперь ID будет определяться динамически после входа
+        let MY_ID = null;
 
-        // Глобальная функция для кнопок
+        // Функция входа через Google
+        async function loginWithGoogle() {
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: window.location.href // Возвращает на текущую страницу после входа
+                }
+            });
+            if (error) console.error("Ошибка входа через Google:", error.message);
+        }
+
+        // Функция выхода
+        async function logout() {
+            await supabase.auth.signOut();
+            window.location.reload();
+        }
+
+        // Слушатель состояния авторизации Supabase
+        supabase.auth.onAuthStateChange((event, session) => {
+            const loginBtn = document.getElementById('loginBtn');
+            const profileContent = document.getElementById('profileContent');
+
+            if (session && session.user) {
+                // Пользователь вошел
+                MY_ID = session.user.id; 
+                loginBtn.classList.add('hidden');
+                profileContent.classList.remove('hidden');
+                fetchGroup();
+            } else {
+                // Пользователь не вошел
+                MY_ID = null;
+                loginBtn.classList.remove('hidden');
+                profileContent.classList.add('hidden');
+                document.getElementById('myInfo').innerText = "Пожалуйста, авторизуйтесь.";
+            }
+        });
+
+        // Привязка функций к кнопкам интерфейса
+        document.getElementById('loginBtn').addEventListener('click', loginWithGoogle);
+        document.getElementById('logoutBtn').addEventListener('click', logout);
+
+        // Глобальная функция для кнопок смены статуса
         window.changeStatus = async (statusText, colorCode) => {
+            if (!MY_ID) {
+                alert("Вы не авторизованы!");
+                return;
+            }
             console.log("Обновление статуса для:", MY_ID);
             
             const { error } = await supabase
@@ -95,11 +154,13 @@
                         </div>
                     `).join('');
 
-                    const me = data.find(u => u.id === MY_ID);
-                    if (me) {
-                        document.getElementById('myInfo').innerText = `Привет, ${me.username}! `;
-                    } else {
-                        document.getElementById('myInfo').innerText = `Профиль не найден (ID: ${MY_ID.substring(0,8)}...)`;
+                    if (MY_ID) {
+                        const me = data.find(u => u.id === MY_ID);
+                        if (me) {
+                            document.getElementById('myInfo').innerText = `Привет, ${me.username}! `;
+                        } else {
+                            document.getElementById('myInfo').innerText = `Профиль не найден в БД (ID: ${MY_ID.substring(0,8)}...)`;
+                        }
                     }
                 } else {
                     list.innerHTML = "В таблице нет данных.";
@@ -110,7 +171,7 @@
             }
         }
 
-        // Запуск при загрузке
+        // Запуск при загрузке страницы
         fetchGroup();
         
         // Автообновление каждые 5 секунд
