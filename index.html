@@ -19,74 +19,86 @@
         }
         .card {
             background: white;
-            padding: 25px;
-            border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            padding: 30px;
+            border-radius: 24px;
+            box-shadow: 0 10px 25px rgba(162, 28, 175, 0.05);
             width: 100%;
             max-width: 400px;
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
-        h2 { color: #a21caf; margin-top: 0; }
+        h2 { 
+            color: #a21caf; 
+            margin-top: 0; 
+            margin-bottom: 20px;
+            font-size: 22px;
+        }
         .btn-google {
             background: white;
             border: 1px solid #dadce0;
             color: #3c4043;
             padding: 12px 24px;
-            border-radius: 8px;
+            border-radius: 12px;
             font-size: 16px;
             font-weight: 500;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 10px;
-            transition: background 0.2s;
+            gap: 12px;
+            transition: background 0.2s, transform 0.1s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
-        .btn-google:hover { background: #f8f9fa; }
+        .btn-google:hover { background: #f8f9fa; transform: scale(1.01); }
+        .btn-google:active { transform: scale(0.99); }
+        
         .status-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 12px;
-            margin-top: 20px;
+            margin-top: 10px;
         }
         .status-btn {
             padding: 14px;
             border: none;
-            border-radius: 12px;
+            border-radius: 14px;
             font-size: 16px;
             font-weight: bold;
             color: white;
             cursor: pointer;
             transition: transform 0.1s, opacity 0.2s;
         }
-        .status-btn:hover { opacity: 0.9; transform: scale(1.02); }
-        .status-btn:active { transform: scale(0.98); }
+        .status-btn:hover { opacity: 0.9; transform: scale(1.03); }
+        .status-btn:active { transform: scale(0.97); }
+        
         .monitor-list {
             text-align: left;
-            margin-top: 15px;
+            margin-top: 5px;
         }
         .monitor-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 8px;
-            background: #fafafa;
-            border-left: 5px solid #ccc;
+            padding: 12px 16px;
+            border-radius: 14px;
+            margin-bottom: 10px;
+            background: #faf7fd;
+            border-left: 6px solid #ccc;
         }
         .user-name { font-weight: 600; color: #333; }
-        .user-status { padding: 4px 10px; border-radius: 20px; color: white; font-size: 14px; font-weight: bold; }
+        .user-status { padding: 5px 12px; border-radius: 20px; color: white; font-size: 14px; font-weight: bold; }
         .loading { color: #888; font-style: italic; }
+        
         .logout-btn {
             background: none;
             border: none;
             color: #ef4444;
             cursor: pointer;
             font-size: 14px;
-            margin-top: 15px;
+            margin-top: 20px;
             text-decoration: underline;
+            opacity: 0.8;
         }
+        .logout-btn:hover { opacity: 1; }
     </style>
 </head>
 <body>
@@ -94,7 +106,7 @@
     <div id="auth-container" class="card">
         <h2>Мой профиль</h2>
         <button class="btn-google" onclick="loginWithGoogle()">
-            <svg width="18" height="18" viewBox="0 0 18 18">
+            <svg width="20" height="20" viewBox="0 0 18 18">
                 <path d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.47h4.84c-.21 1.12-.84 2.07-1.79 2.7l2.73 2.11c1.6-1.48 2.52-3.66 2.52-6.44z" fill="#4285F4"/>
                 <path d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.73-2.11c-.76.51-1.73.81-2.93.81-2.26 0-4.17-1.53-4.85-3.58L1.64 13.1c1.48 2.94 4.53 4.9 8.04 4.9z" fill="#34A853"/>
                 <path d="M4.15 10.94A5.4 5.4 0 0 1 3.86 9c0-.68.11-1.35.33-1.94L1.39 4.88A8.99 8.99 0 0 0 0 9c0 1.5.37 2.93 1.02 4.2l3.13-2.26z" fill="#FBBC05"/>
@@ -105,7 +117,7 @@
     </div>
 
     <div id="profile-container" class="card" style="display: none;">
-        <h2 id="welcome-text">Привет!</h2>
+        <h2 id="welcome-text">Мой профиль</h2>
         <div class="status-grid">
             <button class="status-btn" style="background-color: #10b981;" onclick="updateStatus('📚 Учусь', '#10b981')">📚 Учусь</button>
             <button class="status-btn" style="background-color: #3b82f6;" onclick="updateStatus('💻 Кодю', '#3b82f6')">💻 Кодю</button>
@@ -123,120 +135,125 @@
     </div>
 
     <script>
-        // === НАСТРОЙКИ SUPABASE ===
-        // TODO: ЗАМЕНИ ЭТИ ДВЕ СТРОЧКИ НА СВОИ ИЗ НАСТРОЕК SUPABASE (Settings -> API)
-        const SUPABASE_URL = "https://urxuxcaijnyagknanogv.supabase.co"; 
-        const SUPABASE_ANON_KEY = "ВСТАВЬ_СЮДА_СВОЙ_ANON_KEY"; 
+        // === КОНФИГУРАЦИЯ SUPABASE ===
+        const SUPABASE_URL = "https://urxuxcaijnyagknanogv.supabase.co";
+        const SUPABASE_ANON_KEY = "ВСТАВЬ_СЮДА_СВОЙ_ОБРАТНЫЙ_ANON_KEY";
 
-        const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Объявляем переменную ОДИН раз во избежание SyntaxError
+        const supabaseInstance = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        let loggedInUser = null;
 
-        let currentUser = null;
-
-        // Инициализация при загрузке страницы
+        // Инициализация скрипта при загрузке страницы
         async function init() {
-            // Проверяем, залогинен ли пользователь на данный момент
-            const { data: { session } } = await supabase.auth.getSession();
-            handleAuthChange(session);
+            // Проверяем наличие сессии (включая обработку токена от Google)
+            const { data: { session } } = await supabaseInstance.auth.getSession();
+            handleUserAuth(session);
 
-            // Слушаем изменения авторизации (например, возврат от Google)
-            supabase.auth.onAuthStateChange((event, session) => {
-                handleAuthChange(session);
+            // Подписываемся на динамические изменения авторизации
+            supabaseInstance.auth.onAuthStateChange((event, session) => {
+                handleUserAuth(session);
             });
 
-            // Сразу загружаем общие статусы для монитора
-            loadMonitorData();
+            // Загружаем список участников в Монитор
+            loadMonitor();
         }
 
-        // Обработка переключения экранов Вход / Профиль
-        function handleAuthChange(session) {
+        // Переключение видимости блоков Авторизации и Профиля
+        function handleUserAuth(session) {
+            const authBlock = document.getElementById('auth-container');
+            const profileBlock = document.getElementById('profile-container');
+            const welcomeLabel = document.getElementById('welcome-text');
+
             if (session && session.user) {
-                currentUser = session.user;
-                document.getElementById('auth-container').style.display = 'none';
-                document.getElementById('profile-container').style.display = 'block';
-                document.getElementById('welcome-text').innerText = `Привет, ${currentUser.email.split('@')[0]}!`;
+                loggedInUser = session.user;
+                authBlock.style.display = 'none';
+                profileBlock.style.display = 'block';
+                
+                // Извлекаем имя из почты (до знака @)
+                const userName = loggedInUser.email.split('@')[0];
+                welcomeLabel.innerText = `Привет, ${userName}!`;
             } else {
-                currentUser = null;
-                document.getElementById('auth-container').style.display = 'block';
-                document.getElementById('profile-container').style.display = 'none';
+                loggedInUser = null;
+                authBlock.style.display = 'block';
+                profileBlock.style.display = 'none';
             }
         }
 
-        // Запуск авторизации через Google
+        // Вызов OAuth авторизации Google
         async function loginWithGoogle() {
-            const { error } = await supabase.auth.signInWithOAuth({
+            const { error } = await supabaseInstance.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
                     redirectTo: window.location.origin + window.location.pathname
                 }
             });
-            if (error) alert("Ошибка авторизации: " + error.message);
+            if (error) alert("Ошибка при подключении к Google: " + error.message);
         }
 
-        // Выход из аккаунта
+        // Выход из профиля
         async function logout() {
-            await supabase.auth.signOut();
+            await supabaseInstance.auth.signOut();
             window.location.reload();
         }
 
-        // Обновление своего статуса в базе данных
+        // Функция изменения статуса в твоей таблице 'Gulnaz'
         async function updateStatus(statusText, colorCode) {
-            if (!currentUser) return alert("Вы не авторизованы!");
+            if (!loggedInUser) return alert("Вы не авторизованы!");
 
-            const { error } = await supabase
+            const { error } = await supabaseInstance
                 .from('Gulnaz')
                 .update({ 
                     status: statusText, 
                     color: colorCode 
                 })
-                .eq('id', currentUser.id); // Обновляем строку, где id равен твоему UID
+                .eq('id', loggedInUser.id); // Фильтр по твоему системному User UID
 
             if (error) {
-                console.error("Ошибка обновления статуса:", error);
-                alert("Не удалось обновить статус. Убедись, что твой UID прописан в таблице базы данных!");
+                console.error("Ошибка сохранения статуса:", error);
+                alert("Ошибка! Проверь, добавила ли ты свой новый UID в Table Editor таблицы Gulnaz.");
             } else {
-                // После успешного обновления перерисовываем монитор
-                loadMonitorData();
+                // Мгновенно обновляем монитор на экране
+                loadMonitor();
             }
         }
 
-        // Загрузка всех статусов для "Монитора группы"
-        async function loadMonitorData() {
-            const container = document.getElementById('monitor-container');
+        // Получение и отображение всех записей из таблицы 'Gulnaz'
+        async function loadMonitor() {
+            const monitorBox = document.getElementById('monitor-container');
             
-            const { data, error } = await supabase
+            const { data, error } = await supabaseInstance
                 .from('Gulnaz')
                 .select('*');
 
             if (error) {
-                console.error("Ошибка загрузки монитора:", error);
-                container.innerHTML = `<div style="color:red;">Ошибка загрузки данных.</div>`;
+                console.error("Ошибка получения данных таблицы:", error);
+                monitorBox.innerHTML = `<div style="color:#ef4444;">Ошибка загрузки данных.</div>`;
                 return;
             }
 
             if (!data || data.length === 0) {
-                container.innerHTML = `<div>Таблица пуста.</div>`;
+                monitorBox.innerHTML = `<div>В таблице нет записей.</div>`;
                 return;
             }
 
-            // Рендерим строки таблицы
-            container.innerHTML = '';
+            monitorBox.innerHTML = '';
             data.forEach(row => {
                 const item = document.createElement('div');
                 item.className = 'monitor-item';
                 item.style.borderLeftColor = row.color || '#ccc';
 
-                const displayStatus = row.status ? row.status : '💤 Нет статуса';
-                const displayColor = row.color ? row.color : '#999';
+                const status = row.status ? row.status : '💤 Нет статуса';
+                const color = row.color ? row.color : '#999';
 
                 item.innerHTML = `
-                    <span class="user-name">${row.username || 'Аноним'}</span>
-                    <span class="user-status" style="background-color: ${displayColor}">${displayStatus}</span>
+                    <span class="user-name">${row.username || 'Пользователь'}</span>
+                    <span class="user-status" style="background-color: ${color}">${status}</span>
                 `;
-                container.appendChild(item);
+                monitorBox.appendChild(item);
             });
         }
 
-        // Запуск скрипта при загрузке страницы
+        // Привязываем старт к загрузке окна
         window.onload = init;
     </script>
 </body>
