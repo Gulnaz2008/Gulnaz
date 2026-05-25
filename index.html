@@ -100,29 +100,30 @@
     </div>
 
     <script>
-        // === НАСТРОЙКИ СЕТИ ===
         const URL = 'https://urxuxcaijnyagknanogv.supabase.co';
-        // Вставь сюда свой ANON_KEY (в кавычки)
         const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInRefiI6InVyeHV4Y2Fpam55YWdrbmFub2d2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2ODA2MTAsImV4cCI6MjA5MjI1NjYxMH0.a4VMlgaEiZknBNl-eazc6Ry37syVjnKanPtn14F7XeA';
         
-        // Изменили название переменной, чтобы избежать ошибок дублирования
-        const supabaseClient = Supabase.createClient(URL, KEY);
+        // Создаем клиент один раз, используя глобальную библиотеку
+        const supabase = window.supabase.createClient(URL, KEY);
         let MY_ID = null;
 
-        // Инициализация при загрузке
+        // Главный запуск приложения
         async function init() {
-            const { data: { session } } = await supabaseClient.auth.getSession();
+            // Проверяем текущую сессию
+            const { data: { session } } = await supabase.auth.getSession();
             handleAuth(session);
 
-            supabaseClient.auth.onAuthStateChange((event, session) => {
+            // Слушаем входы/выходы (в том числе возврат от Google)
+            supabase.auth.onAuthStateChange((event, session) => {
                 handleAuth(session);
             });
 
+            // Запускаем монитор и ставим автообновление
             fetchGroup();
-            setInterval(fetchGroup, 5000); // Автообновление раз в 5 секунд
+            setInterval(fetchGroup, 5000);
         }
 
-        // Логика переключения интерфейса
+        // Управление экранами (Вход / Кнопки)
         function handleAuth(session) {
             const loginBtn = document.getElementById('loginBtn');
             const profileContent = document.getElementById('profileContent');
@@ -139,47 +140,47 @@
             }
         }
 
-        // Авторизация через Google
+        // Функция входа через Google
         async function loginWithGoogle() {
-            const { error } = await supabaseClient.auth.signInWithOAuth({
+            const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
                     redirectTo: window.location.origin + window.location.pathname
                 }
             });
-            if (error) console.error("Ошибка входа через Google:", error.message);
+            if (error) console.error("Ошибка входа:", error.message);
         }
 
-        // Выход
+        // Функция выхода
         async function logout() {
-            await supabaseClient.auth.signOut();
+            await supabase.auth.signOut();
             window.location.reload();
         }
 
-        // Обновление статуса
+        // Функция изменения статуса
         window.changeStatus = async (statusText, colorCode) => {
             if (!MY_ID) {
                 alert("Вы не авторизованы!");
                 return;
             }
             
-            const { error } = await supabaseClient
+            const { error } = await supabase
                 .from('Gulnaz')
                 .update({ status: statusText, color: colorCode })
                 .eq('id', MY_ID);
 
             if (error) {
-                console.error("Ошибка Supabase:", error);
+                console.error("Ошибка базы данных:", error);
                 alert("Не удалось обновить: " + error.message);
             } else {
                 fetchGroup(); 
             }
         };
 
-        // Загрузка монитора группы
+        // Загрузка монитора группы (как на твоем фото-примере)
         async function fetchGroup() {
             try {
-                const { data, error } = await supabaseClient
+                const { data, error } = await supabase
                     .from('Gulnaz')
                     .select('*')
                     .order('username', { ascending: true });
@@ -210,11 +211,12 @@
                     list.innerHTML = "В таблице нет данных.";
                 }
             } catch (err) {
-                console.error("Ошибка загрузки:", err);
+                console.error("Ошибка сети:", err);
                 document.getElementById('groupList').innerText = "Ошибка загрузки данных.";
             }
         }
 
+        // Запускаем всё при загрузке страницы
         window.onload = init;
     </script>
 </body>
