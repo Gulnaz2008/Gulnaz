@@ -1,132 +1,181 @@
-<script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мой статус | Gulnaz Edition</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 20px; color: #4a148c; }
+        
+        .card { background: rgba(255, 255, 255, 0.9); padding: 30px; border-radius: 30px; width: 100%; max-width: 500px; margin-bottom: 20px; box-shadow: 0 10px 25px rgba(155, 89, 182, 0.15); text-align: center; backdrop-filter: blur(5px); border: 1px solid rgba(255, 255, 255, 0.3); }
+        
+        h2 { color: #9c27b0; font-weight: bold; font-size: 24px; margin-bottom: 20px; }
+        
+        .buttons-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+        
+        .status-btn { padding: 16px; border: none; border-radius: 15px; color: white; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .status-btn:hover { opacity: 0.8; transform: translateY(-2px); }
 
-    const URL = 'https://urxuxcaijnyagknanogv.supabase.co';
-    const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInRefiI6InVyeHV4Y2Fpam55YWdrbmFub2d2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2ODA2MTAsImV4cCI6MjA5MjI1NjYxMH0.a4VMlgaEiZknBNl-eazc6Ry37syVjnKanPtn14F7XeA';
-    const supabase = createClient(URL, KEY);
+        .btn-study { background: #4CAF50; }
+        .btn-coffee { background: #FFC107; color: #333; }
+        .btn-game { background: #17a2b8; }
+        .btn-rest { background: #ff4757; }
 
-    let MY_ID = null;
-    let MY_NAME = "Пользователь";
+        /* Стили для кнопок авторизации */
+        .btn-google { background: #ffffff; color: #757575; border: 1px solid #ddd; padding: 12px; width: 100%; border-radius: 15px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn-logout { background: transparent; color: #ff4757; border: none; cursor: pointer; font-size: 14px; text-decoration: underline; margin-top: 10px; display: inline-block; }
 
-    // Функция входа через Google
-    async function loginWithGoogle() {
-        const { error } = await supabase.auth.signInWithOAuth({
-            provider: 'google',
-            options: {
-                redirectTo: window.location.href
+        .user-item { display: flex; align-items: center; padding: 15px; background: white; border-radius: 20px; margin-bottom: 10px; text-align: left; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .status-dot { width: 15px; height: 15px; border-radius: 50%; margin-right: 15px; flex-shrink: 0; }
+        
+        #myInfo { color: #7b1fa2; font-weight: bold; margin-bottom: 15px; font-size: 18px; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>Мой профиль</h2>
+        
+        <button id="loginBtn" class="btn-google">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_構成_2015.svg" width="18" alt="Google">
+            Войти через Google
+        </button>
+
+        <div id="profileContent" class="hidden">
+            <div id="myInfo">Подключение к системе...</div>
+            <div class="buttons-grid">
+                <button class="status-btn btn-study" onclick="changeStatus('📚 Учусь', '#4CAF50')">📚 Учусь</button>
+                <button class="status-btn btn-coffee" onclick="changeStatus('☕ Отдыхаю', '#FFC107')">☕ Отдых</button>
+                <button class="status-btn btn-game" onclick="changeStatus('🎮 В игре', '#17a2b8')">🎮 В игре</button>
+                <button class="status-btn btn-rest" onclick="changeStatus('😴 Сплю', '#ff4757')">😴 Сплю</button>
+            </div>
+            <button id="logoutBtn" class="btn-logout">Выйти из аккаунта</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Монитор группы</h2>
+        <div id="groupList">Загрузка списка...</div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+        const URL = 'https://urxuxcaijnyagknanogv.supabase.co';
+        const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInRefiI6InVyeHV4Y2Fpam55YWdrbmFub2d2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2ODA2MTAsImV4cCI6MjA5MjI1NjYxMH0.a4VMlgaEiZknBNl-eazc6Ry37syVjnKanPtn14F7XeA';
+        const supabase = createClient(URL, KEY);
+
+        // Теперь ID будет определяться динамически после входа
+        let MY_ID = null;
+
+        // Функция входа через Google
+        async function loginWithGoogle() {
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: window.location.href // Возвращает на текущую страницу после входа
+                }
+            });
+            if (error) console.error("Ошибка входа через Google:", error.message);
+        }
+
+        // Функция выхода
+        async function logout() {
+            await supabase.auth.signOut();
+            window.location.reload();
+        }
+
+        // Слушатель состояния авторизации Supabase
+        supabase.auth.onAuthStateChange((event, session) => {
+            const loginBtn = document.getElementById('loginBtn');
+            const profileContent = document.getElementById('profileContent');
+
+            if (session && session.user) {
+                // Пользователь вошел
+                MY_ID = session.user.id; 
+                loginBtn.classList.add('hidden');
+                profileContent.classList.remove('hidden');
+                fetchGroup();
+            } else {
+                // Пользователь не вошел
+                MY_ID = null;
+                loginBtn.classList.remove('hidden');
+                profileContent.classList.add('hidden');
+                document.getElementById('myInfo').innerText = "Пожалуйста, авторизуйтесь.";
             }
         });
-        if (error) console.error("Ошибка входа через Google:", error.message);
-    }
 
-    // Функция выхода
-    async function logout() {
-        await supabase.auth.signOut();
-        window.location.reload();
-    }
+        // Привязка функций к кнопкам интерфейса
+        document.getElementById('loginBtn').addEventListener('click', loginWithGoogle);
+        document.getElementById('logoutBtn').addEventListener('click', logout);
 
-    // Слушатель состояния авторизации Supabase
-    supabase.auth.onAuthStateChange(async (event, session) => {
-        const loginBtn = document.getElementById('loginBtn');
-        const profileContent = document.getElementById('profileContent');
-
-        if (session && session.user) {
-            MY_ID = session.user.id; 
-            // Берем имя из Google профиля
-            MY_NAME = session.user.user_metadata.full_name || session.user.email.split('@')[0];
-
-            loginBtn.classList.add('hidden');
-            profileContent.classList.remove('hidden');
-            
-            // Проверяем, есть ли мы в таблице Gulnaz, если нет — создаем строчку
-            await checkAndCreateUser();
-            fetchGroup();
-        } else {
-            MY_ID = null;
-            loginBtn.classList.remove('hidden');
-            profileContent.classList.add('hidden');
-            document.getElementById('myInfo').innerText = "Пожалуйста, авторизуйтесь.";
-        }
-    });
-
-    // Функция проверки и автоматического добавления пользователя в базу
-    async function checkAndCreateUser() {
-        if (!MY_ID) return;
-        
-        const { data, error } = await supabase
-            .from('Gulnaz')
-            .select('*')
-            .eq('id', MY_ID);
-
-        // Если пользователя с таким Google ID еще нет в таблице — добавляем его
-        if (!error && (!data || data.length === 0)) {
-            await supabase
-                .from('Gulnaz')
-                .insert([{ id: MY_ID, username: MY_NAME, status: '👋 Только вошел', color: '#666666' }]);
-        }
-    }
-
-    // Привязка функций к кнопкам
-    document.getElementById('loginBtn').addEventListener('click', loginWithGoogle);
-    document.getElementById('logoutBtn').addEventListener('click', logout);
-
-    // Функция смены статуса
-    window.changeStatus = async (statusText, colorCode) => {
-        if (!MY_ID) {
-            alert("Вы не авторизованы!");
-            return;
-        }
-        
-        const { error } = await supabase
-            .from('Gulnaz')
-            .update({ status: statusText, color: colorCode })
-            .eq('id', MY_ID);
-
-        if (error) {
-            console.error("Ошибка обновления статуса:", error);
-            alert("Не удалось обновить: " + error.message);
-        } else {
-            fetchGroup(); 
-        }
-    };
-
-    async function fetchGroup() {
-        try {
-            const { data, error } = await supabase
-                .from('Gulnaz')
-                .select('*')
-                .order('username', { ascending: true });
-
-            if (error) throw error;
-
-            const list = document.getElementById('groupList');
-            if (data && data.length > 0) {
-                list.innerHTML = data.map(user => `
-                    <div class="user-item">
-                        <div class="status-dot" style="background: ${user.color || '#ccc'}"></div>
-                        <div>
-                            <strong style="color: #9c27b0;">${user.username || 'Без имени'}</strong><br>
-                            <small style="color: #666;">${user.status || 'Нет статуса'}</small>
-                        </div>
-                    </div>
-                `).join('');
-
-                if (MY_ID) {
-                    const me = data.find(u => u.id === MY_ID);
-                    if (me) {
-                        document.getElementById('myInfo').innerText = `Привет, ${me.username}!`;
-                    }
-                }
-            } else {
-                list.innerHTML = "В таблице нет данных.";
+        // Глобальная функция для кнопок смены статуса
+        window.changeStatus = async (statusText, colorCode) => {
+            if (!MY_ID) {
+                alert("Вы не авторизованы!");
+                return;
             }
-        } catch (err) {
-            console.error("Ошибка загрузки данных:", err);
-            document.getElementById('groupList').innerText = "Ошибка загрузки данных.";
-        }
-    }
+            console.log("Обновление статуса для:", MY_ID);
+            
+            const { error } = await supabase
+                .from('Gulnaz')
+                .update({ status: statusText, color: colorCode })
+                .eq('id', MY_ID);
 
-    // Запуск и интервал обновления
-    fetchGroup();
-    setInterval(fetchGroup, 5000);
-</script>
+            if (error) {
+                console.error("Ошибка Supabase:", error);
+                alert("Не удалось обновить: " + error.message);
+            } else {
+                console.log("Статус успешно обновлен!");
+                fetchGroup(); // Сразу обновляем список на экране
+            }
+        };
+
+        async function fetchGroup() {
+            try {
+                const { data, error } = await supabase
+                    .from('Gulnaz')
+                    .select('*')
+                    .order('username', { ascending: true });
+
+                if (error) throw error;
+
+                const list = document.getElementById('groupList');
+                if (data && data.length > 0) {
+                    list.innerHTML = data.map(user => `
+                        <div class="user-item">
+                            <div class="status-dot" style="background: ${user.color || '#ccc'}"></div>
+                            <div>
+                                <strong style="color: #9c27b0;">${user.username || 'Без имени'}</strong><br>
+                                <small style="color: #666;">${user.status || 'Нет статуса'}</small>
+                            </div>
+                        </div>
+                    `).join('');
+
+                    if (MY_ID) {
+                        const me = data.find(u => u.id === MY_ID);
+                        if (me) {
+                            document.getElementById('myInfo').innerText = `Привет, ${me.username}! `;
+                        } else {
+                            document.getElementById('myInfo').innerText = `Профиль не найден в БД (ID: ${MY_ID.substring(0,8)}...)`;
+                        }
+                    }
+                } else {
+                    list.innerHTML = "В таблице нет данных.";
+                }
+            } catch (err) {
+                console.error("Ошибка загрузки:", err);
+                document.getElementById('groupList').innerText = "Ошибка загрузки данных.";
+            }
+        }
+
+        // Запуск при загрузке страницы
+        fetchGroup();
+        
+        // Автообновление каждые 5 секунд
+        setInterval(fetchGroup, 5000);
+    </script>
+</body>
+</html>
