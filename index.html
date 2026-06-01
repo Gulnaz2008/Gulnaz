@@ -211,22 +211,19 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-    // Твои настройки Supabase (Оставляем прежними, они верные)
     const SUPABASE_URL = 'https://aecurveycefurzgkloaq.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_1N6vKLVRSpJeWya6w7Aaig_-w5RA8yY';
     const sb_client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    let isStudying = false; // Флаг: учится ли пользователь прямо сейчас
-    let currentSessionStartTime = null; // НОВАЯ ПЕРЕМЕННАЯ: для отслеживания марафона
+    let isStudying = false; 
+    let currentSessionStartTime = null; 
 
-    // ТЕКСТОВЫЕ НАЗВАНИЯ ДЛЯ ТВОИХ НАГРАД
     const BADGE_DETAILS = {
         'early': { text: '🌌 Ранняя пташка', title: 'Учеба начата до 8:00 утра' },
         'marathon': { text: '⚡ Марафонец', title: 'Непрерывная учеба более 2 часов' },
         'activist': { text: '🔮 Активист', title: 'Написано 20 сообщений в чате' }
     };
 
-    // ОБНОВЛЕННАЯ ФУНКЦИЯ: Отрисовка наград в виде красивых текстовых плашек
     function renderBadges(badgesArray) {
         if (!badgesArray || badgesArray.length === 0) return '';
         return `<div class="badges-container">` + badgesArray.map(b => {
@@ -255,7 +252,6 @@
         return `${h}:${m}:${s}`;
     }
 
-    // Переключение сессии Учебы
     async function toggleStudySession() {
         const { data: { user } } = await sb_client.auth.getUser();
         if (!user) return alert("Сначала войдите!");
@@ -263,16 +259,14 @@
         const btn = document.getElementById('sessionBtn');
         
         if (!isStudying) {
-            // Начинаем учебу
             isStudying = true;
-            currentSessionStartTime = new Date(); // Запоминаем время старта сессии
+            currentSessionStartTime = new Date(); 
             btn.innerText = "⏹ Завершить сессию";
             btn.className = "btn-session-stop";
             await changeStatus('📚 Учусь', '#9d4edd');
         } else {
-            // Завершаем учебу
             isStudying = false;
-            currentSessionStartTime = null; // Сбрасываем время сессии
+            currentSessionStartTime = null; 
             btn.innerText = "🧠 Начать учебу";
             btn.className = "btn-session-start";
             await changeStatus('👾 Отдых', '#e0aaff');
@@ -283,7 +277,6 @@
         const { data: { user } } = await sb_client.auth.getUser();
         if (!user) return;
 
-        // Если принудительно переключили статус кнопками "Кофе/В игре/Дома", выключаем сессию учебы
         if (statusText !== '📚 Учусь' && isStudying) {
             isStudying = false;
             currentSessionStartTime = null;
@@ -294,7 +287,6 @@
 
         const name = user.user_metadata.full_name || user.email.split('@')[0];
 
-        // НОВАЯ ФУНКЦИЯ: Проверка ачивки "Ранняя пташка" перед сохранением
         let currentBadges = [];
         const { data: profile } = await sb_client.from('profiles').select('badges').eq('id', user.id).single();
         if (profile && profile.badges) currentBadges = profile.badges;
@@ -313,7 +305,7 @@
             status: statusText, 
             color: statusColor,
             last_seen: new Date().toISOString(),
-            badges: currentBadges // Сохраняем ачивки
+            badges: currentBadges 
         });
 
         fetchGroup();
@@ -324,7 +316,7 @@
         if (error) return;
 
         const listContainer = document.getElementById('groupList');
-        const leaderboardContainer = document.getElementById('leaderboard'); // Контейнер для Топа
+        const leaderboardContainer = document.getElementById('leaderboard'); 
         const now = new Date();
 
         listContainer.innerHTML = data.map(user => {
@@ -345,7 +337,6 @@
             `;
         }).join('');
 
-        // НОВАЯ ФУНКЦИЯ: Генерация и сортировка ТОП-5 студентов по времени учебы
         const sortedUsers = [...data].sort((a, b) => (b.study_time || 0) - (a.study_time || 0));
         leaderboardContainer.innerHTML = sortedUsers.slice(0, 5).map((user, index) => `
             <div class="leader-item">
@@ -362,14 +353,31 @@
             document.getElementById('chatInputArea').style.display = 'flex';
             document.getElementById('chatGuestNotice').style.display = 'none';
 
-            const currentUserData = data.find(u => u.id === user.id);
+            let currentUserData = data.find(u => u.id === user.id);
+            
+            // Если данные в БД были очищены, автоматически создаем пустой профиль при проверке
+            if (!currentUserData) {
+                const { data: newProfile, error: upsertError } = await sb_client.from('profiles').upsert({
+                    id: user.id,
+                    username: displayName,
+                    status: '👾 Отдых',
+                    color: '#e0aaff',
+                    last_seen: new Date().toISOString(),
+                    study_time: 0,
+                    msg_count: 0,
+                    sessions_count: 0,
+                    badges: []
+                }).select().single();
+                
+                if (!upsertError) {
+                    currentUserData = newProfile;
+                }
+            }
+
             if (currentUserData) {
                 document.getElementById('myStudyTime').innerText = `Время вашей учебы: ${formatTime(currentUserData.study_time || 0)}`;
-                
-                // Отображение личных текстовых значков в твоем профиле
                 document.getElementById('myBadgesRow').innerHTML = "Ваши награды: " + (renderBadges(currentUserData.badges) || 'Пока нет 🐾');
                 
-                // Синхронизируем состояние кнопок при перезагрузке страницы
                 if (currentUserData.status === '📚 Учусь' && !isStudying) {
                     isStudying = true;
                     if(!currentSessionStartTime) currentSessionStartTime = new Date();
@@ -387,7 +395,6 @@
         }
     }
 
-    // ЛОГИКА ЧАТА
     async function sendChatMessage() {
         const input = document.getElementById('msgInput');
         const text = input.value.trim();
@@ -406,7 +413,6 @@
 
         if (error) console.error(error);
 
-        // НОВАЯ ФУНКЦИЯ: Подсчет количества сообщений и выдача ачивки "Активист"
         const { data: profile } = await sb_client.from('profiles').select('msg_count, badges').eq('id', user.id).single();
         let currentCount = (profile?.msg_count || 0) + 1;
         let currentBadges = profile?.badges || [];
@@ -431,25 +437,20 @@
             <div class="chat-msg"><b>${msg.username}:</b> ${msg.message}</div>
         `).join('');
         
-        // Автоматическая прокрутка чата вниз
         chatContainer.scrollTop = chatContainer.scrollHeight;
     }
 
-    // ТАЙМЕРЫ
     setInterval(async () => {
         const { data: { user } } = await sb_client.auth.getUser();
         if (!user) return;
 
-        // Каждые 5 секунд говорим базе, что мы онлайн
         await sb_client.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', user.id);
 
-        // Если запущена сессия учебы, прибавляем 5 секунд
         if (isStudying) {
             const { data: currentProfile } = await sb_client.from('profiles').select('study_time, badges').eq('id', user.id).single();
             let newTime = (currentProfile?.study_time || 0) + 5;
             let currentBadges = currentProfile?.badges || [];
 
-            // НОВАЯ ФУНКЦИЯ: Проверка ачивки "Марафонец" (если учится дольше 2 часов = 7200 секунд)
             if (currentSessionStartTime) {
                 const sessionSeconds = Math.floor((new Date() - currentSessionStartTime) / 1000);
                 if (sessionSeconds >= 7200 && !currentBadges.includes('marathon')) {
@@ -462,11 +463,10 @@
         }
     }, 5000);
 
-    // Первичный запуск и циклы обновления экранов
     fetchGroup();
     fetchChat();
     setInterval(fetchGroup, 5000);
-    setInterval(fetchChat, 4000); // Чат обновляется чуть чаще
+    setInterval(fetchChat, 4000); 
 </script>
 
 </body>
